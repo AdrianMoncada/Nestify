@@ -1,156 +1,100 @@
-import { Home, Feather, Bird, Leaf } from "lucide-react";
-import React, { useEffect, useState } from "react";
-import { render } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
-const AnimatedNumber = ({ value }) => {
+import React from "react";
+import { Leaf, Feather, Bird, Home, X } from "lucide-react";
+import { AnimatedCounter } from "./components/AnimatedCounter";
+export function App() {
   return (
-    <motion.span
-      initial={{
-        opacity: 0,
-      }}
-      animate={{
-        opacity: 1,
-      }}
-      className="text-sm text-green-500 ml-2"
-    >
-      +{value}
-    </motion.span>
-  );
-};
-export default function RewardModal() {
-  const [sessionGains] = useState({
-    trees: 3,
-    feathers: 5,
-    houses: 2,
-    birds: 4,
-  });
-  const [counts, setCounts] = useState({
-    trees: 0,
-    feathers: 0,
-    houses: 0,
-    birds: 0,
-  });
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCounts((prev) => ({
-        trees: prev.trees < 12 ? prev.trees + 1 : prev.trees,
-        feathers: prev.feathers < 24 ? prev.feathers + 1 : prev.feathers,
-        houses: prev.houses < 8 ? prev.houses + 1 : prev.houses,
-        birds: prev.birds < 16 ? prev.birds + 1 : prev.birds,
-      }));
-    }, 50);
-    return () => clearInterval(interval);
-  }, []);
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-      <motion.div
-        initial={{
-          scale: 0.9,
-          opacity: 0,
-        }}
-        animate={{
-          scale: 1,
-          opacity: 1,
-        }}
-        className="bg-white rounded-xl shadow-xl w-[350px] h-[500px] p-6 flex flex-col items-center"
-      >
-        <motion.h1
-          initial={{
-            opacity: 0,
-            y: -20,
-          }}
-          animate={{
-            opacity: 1,
-            y: 0,
-          }}
-          className="text-2xl font-bold mb-8"
-        >
-          Nest Created!
-        </motion.h1>
-
-        <motion.div
-          initial={{
-            scale: 0,
-          }}
-          animate={{
-            scale: 1,
-          }}
-          transition={{
-            type: "spring",
-            duration: 0.8,
-          }}
-          className="mb-6"
-        >
-          <Home className="w-24 h-24 text-blue-600" />
-        </motion.div>
-
-        <motion.p
-          initial={{
-            opacity: 0,
-          }}
-          animate={{
-            opacity: 1,
-          }}
-          transition={{
-            delay: 0.5,
-          }}
-          className="text-center text-gray-600 mb-8 flex items-center justify-center flex-wrap gap-1"
-        >
-          You've built <span className="text-green-500 font-medium">1</span>{" "}
-          <Home className="w-4 h-4 inline text-blue-600" /> and increased your{" "}
-          <Bird className="w-4 h-4 inline text-yellow-600" /> possible
-          population by <span className="text-green-500 font-medium">5</span>
-        </motion.p>
-
-        <div className="mt-auto w-full">
-          <div className="grid grid-cols-2 gap-4 w-[280px] mx-auto">
-            <div className="flex flex-col items-center justify-center h-20 bg-gray-50 rounded-lg">
-              <Leaf className="w-6 h-6 text-green-600 mb-2" />
-              <div className="flex items-center">
-                <div className="text-sm font-medium">{counts.trees}</div>
-                <AnimatedNumber value={sessionGains.trees} />
+    <div className="w-[400px] h-[550px] bg-white relative">
+      <button className="absolute right-4 top-4 text-gray-400 hover:text-gray-600">
+        <X className="w-5 h-5" />
+      </button>
+      <div className="h-full flex flex-col p-6 gap-8">
+        <div className="flex flex-col items-center">
+          <h1 className="text-xl font-bold text-center mb-4">
+            Session Completed!
+          </h1>
+          <div className="w-[150px] h-[150px] bg-gray-100 rounded-lg" />
+        </div>
+        <p className="text-gray-600 text-center text-sm px-4">
+          You've built 1 <Home className="w-4 h-4 text-blue-600 inline mx-1" />
+          and increased your{" "}
+          <span className="inline-flex items-center">
+            <Bird className="w-4 h-4 text-amber-500 mx-1" />
+          </span>
+          possible population by{" "}
+          <span className="text-green-500 font-medium">5</span>
+        </p>
+        <div className="w-full max-w-[300px] mx-auto">
+          <div className="grid grid-cols-2 gap-6">
+            <div
+              className="flex items-center space-x-3 group relative"
+              title="Resource Counter: Tracks your accumulated leaf resources"
+            >
+              <Leaf className="w-6 h-6 text-green-600" />
+              <div className="bg-gray-50 rounded-lg w-[60px] h-[36px] flex items-center justify-center">
+                <AnimatedCounter end={12} className="text-lg font-semibold" />
+              </div>
+              <span className="text-gray-400 text-sm">+0</span>
+              <div className="absolute invisible group-hover:visible bg-gray-800 text-white text-xs rounded py-1 px-2 -top-8 left-1/2 transform -translate-x-1/2 w-40 text-center">
+                Counter Description
               </div>
             </div>
-
-            <div className="flex flex-col items-center justify-center h-20 bg-gray-50 rounded-lg">
-              <Feather className="w-6 h-6 text-purple-600 mb-2" />
-              <div className="flex items-center">
-                <div className="text-sm font-medium">{counts.feathers}</div>
-                <AnimatedNumber value={sessionGains.feathers} />
+            <div
+              className="flex items-center space-x-3 group relative"
+              title="Resource Counter: Tracks your accumulated feather resources"
+            >
+              <Feather className="w-6 h-6 text-purple-600" />
+              <div className="bg-gray-50 rounded-lg w-[60px] h-[36px] flex items-center justify-center">
+                <AnimatedCounter end={24} className="text-lg font-semibold" />
+              </div>
+              <span className="text-gray-400 text-sm">+0</span>
+              <div className="absolute invisible group-hover:visible bg-gray-800 text-white text-xs rounded py-1 px-2 -top-8 left-1/2 transform -translate-x-1/2 w-40 text-center">
+                Counter Description
               </div>
             </div>
-
-            <div className="flex flex-col items-center justify-center h-20 bg-gray-50 rounded-lg">
-              <Home className="w-6 h-6 text-blue-600 mb-2" />
-              <div className="flex items-center">
-                <div className="text-sm font-medium">{counts.houses}</div>
-                <AnimatedNumber value={sessionGains.houses} />
+            <div
+              className="flex items-center space-x-3 group relative"
+              title="Resource Counter: Tracks your total nests built"
+            >
+              <Home className="w-6 h-6 text-blue-600" />
+              <div className="bg-gray-50 rounded-lg w-[60px] h-[36px] flex items-center justify-center">
+                <AnimatedCounter end={8} className="text-lg font-semibold" />
+              </div>
+              <span className="text-green-500 text-sm">+1</span>
+              <div className="absolute invisible group-hover:visible bg-gray-800 text-white text-xs rounded py-1 px-2 -top-8 left-1/2 transform -translate-x-1/2 w-40 text-center">
+                Counter Description
               </div>
             </div>
-
-            <div className="flex flex-col items-center justify-center h-20 bg-gray-50 rounded-lg">
-              <Bird className="w-6 h-6 text-yellow-600 mb-2" />
-              <div className="flex items-center">
-                <div className="text-sm font-medium">{counts.birds}/16</div>
-                <AnimatedNumber value={sessionGains.birds} />
+            <div
+              className="flex items-center space-x-3 group relative"
+              title="Resource Counter: Tracks your bird population capacity"
+            >
+              <Bird className="w-6 h-6 text-amber-500" />
+              <div className="bg-gray-50 rounded-lg w-[60px] h-[36px] flex items-center justify-center">
+                <span className="text-lg font-semibold">
+                  <AnimatedCounter end={16} className="text-lg font-semibold" />
+                  /16
+                </span>
+              </div>
+              <span className="text-green-500 text-sm">+5</span>
+              <div className="absolute invisible group-hover:visible bg-gray-800 text-white text-xs rounded py-1 px-2 -top-8 left-1/2 transform -translate-x-1/2 w-40 text-center">
+                Counter Description
               </div>
             </div>
           </div>
         </div>
-
-        <motion.button
-          whileHover={{
-            scale: 1.05,
-          }}
-          whileTap={{
-            scale: 0.95,
-          }}
-          className="w-full py-3 px-6 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors mt-6"
-        >
-          Start Another Session
-        </motion.button>
-      </motion.div>
+        <div className="flex flex-col items-center gap-3 mt-auto">
+          <button className="w-[350px] h-[50px] bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm">
+            Start Another Session
+          </button>
+          <p className="text-sm text-gray-600">
+            Enjoying Nestify?{" "}
+            <a href="#" className="text-blue-600 hover:underline">
+              Make a small donation
+            </a>{" "}
+            💙
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
-render(<RewardModal />, document.getElementById("root"));
