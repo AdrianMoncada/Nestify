@@ -56,6 +56,29 @@ Deno.serve(async (req) => {
       );
     }
 
+    if (status_field === "completed" && status_value === true) {
+      const response = await fetch(`${supabaseUrl}/functions/v1/handle_session_outcomes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json" /**,
+          Authorization: `Bearer ${supabaseKey}`, */
+        },
+        body: JSON.stringify({ session_id }),
+      });
+    
+      if (!response.ok) {
+        const errorBody = await response.json();
+        return new Response(
+          JSON.stringify({
+            status: "error",
+            message: `Failed to process session outcomes: ${errorBody.message || response.statusText}`,
+          }),
+          { status: 400 }
+        );
+      }
+    }
+    
+
     return new Response(
       JSON.stringify({
         status: "success",
@@ -63,6 +86,7 @@ Deno.serve(async (req) => {
       }),
       { status: 200 }
     );
+    
   } catch (err) {
     return new Response(
       JSON.stringify({ status: "error", message: err.message }),
