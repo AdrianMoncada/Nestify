@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
 
     // from here
 
-    const { user_id } = session;
+    const { user_id, action } = session;
 
     // Fetch the correct specie_id from user_specie_collection
     const { data: userSpecie, error: userSpecieError } = await supabase
@@ -102,7 +102,14 @@ Deno.serve(async (req) => {
       p_session_id: session_id,
       p_user_id: user_id,
       p_action: action,
-      ...outcomes,
+      p_resources_spent: outcomes.resources_spent,
+      p_feathers_spent: outcomes.feathers_spent,
+      p_nests_created: outcomes.nests_created,
+      p_population_increase: outcomes.population_increase,
+      p_max_population_increase: outcomes.max_population_increase,
+      p_resources_gained: outcomes.resources_gained,
+      p_feathers_gained: outcomes.feathers_gained,
+      p_species_unlocked: outcomes.species_unlocked,
     });
 
     if (insertError) {
@@ -112,7 +119,13 @@ Deno.serve(async (req) => {
     // Apply outcomes to ecosystem
     const { error: updateError } = await supabase.rpc("apply_outcomes_to_ecosystem", {
       p_user_id: user_id,
-      ...outcomes,
+      p_resources_spent: outcomes.resources_spent,
+      p_feathers_spent: outcomes.feathers_spent,
+      p_nests_created: outcomes.nests_created,
+      p_population_increase: outcomes.population_increase,
+      p_max_population_increase: outcomes.max_population_increase,
+      p_resources_gained: outcomes.resources_gained,
+      p_feathers_gained: outcomes.feathers_gained,
     });
 
     if (updateError) {
