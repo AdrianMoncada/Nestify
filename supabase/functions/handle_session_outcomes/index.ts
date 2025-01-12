@@ -32,8 +32,6 @@ Deno.serve(async (req) => {
       throw new Error("Session not found or invalid.");
     }
 
-    // from here
-
     const { user_id, action } = session;
 
     // Fetch the correct specie_id from user_specie_collection
@@ -48,10 +46,6 @@ Deno.serve(async (req) => {
     }
 
     const { specie_id } = userSpecie;
-
-    // to here
-
-
 
     // Fetch species details
     const { data: species, error: speciesError } = await supabase
@@ -75,27 +69,51 @@ Deno.serve(async (req) => {
       throw new Error("Ecosystem not found or invalid.");
     }
 
+    let outcomes = {
+      resources_spent: 0,
+      feathers_spent: 0,
+      nests_created: 0,
+      population_increase: 0,
+      max_population_increase: 0,
+      resources_gained: 0,
+      feathers_gained: 0,
+      species_unlocked: null,
+    };
+
     // Calculate outcomes for "build" action
-    let outcomes = {};
     if (action === "build") {
-      outcomes = {
-        resources_spent: 1,
-        feathers_spent: 0,
-        nests_created: 1,
-        population_increase: 0,
-        max_population_increase: 5 + species.nesting_skill, // Base + skill
-        resources_gained: 0,
-        feathers_gained: 0,
-        species_unlocked: null,
-      };
+        outcomes.resources_spent = 1;
+        outcomes.nests_created = 1;
+        outcomes.max_population_increase = 5 + species.nesting_skill;
 
       // Ensure user has enough resources
       if (ecosystem.resources < outcomes.resources_spent) {
         throw new Error("Not enough resources to complete build action.");
       }
-    } else {
-      throw new Error(`Action type "${action}" not supported yet.`);
     }
+
+    // Generate a random value between 1 and 10.        
+    // If value is less or equal than 2, call table function select_locked_species        
+    // Select a random specie from the locked species list AND        
+    // Call table function assign_specie_to_user based on the selected specie        
+    // Add species_name to species_unlocked
+    if (action === "hatch") {
+      outcomes.feathers_spent = 1;
+      outcomes.population_increase = 1;
+      outcomes.species_unlocked = "Bird Name";
+
+    // Ensure user has enough resources
+    if (ecosystem.feathers < outcomes.feathers_spent) {
+      throw new Error("Not enough feathers to complete hatch action.");
+    }
+  }
+    // Add logic to modify the chances of gather feathers depending on the scouting skill of the specie
+    if (action === "gather") {
+      outcomes.resources_gained = 1 + species.gathering_skill;
+      outcomes.feathers_gained = 1 + species.scouting_skill;
+  } else {
+      throw new Error(`Action type "${action}" not supported yet.`);
+  }
 
     // Insert session outcomes
     const { error: insertError } = await supabase.rpc("calculate_session_outcome", {
