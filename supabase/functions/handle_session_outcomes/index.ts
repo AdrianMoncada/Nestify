@@ -10,6 +10,19 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+function calculateResourcesGained(gatheringSkill: number): number {
+  const base = 1;
+  const increment = 1; // Increment per gathering skill point
+  return base + gatheringSkill * increment;
+}
+
+function calculateFeatherChance(scoutingSkill: number): number {
+  const baseChance = 20; // Base chance in percentage
+  const increment = 10;  // Increment per scouting skill point
+  const chance = baseChance + scoutingSkill * increment;
+  return Math.random() * 100 <= chance ? 1 : 0;
+}
+
 Deno.serve(async (req) => {
   try {
     if (req.method !== "POST") {
@@ -130,16 +143,15 @@ Deno.serve(async (req) => {
         }
       }
     }
-
     break;
     
       case "gather":
-        outcomes.resources_gained = 1 + species.gathering_skill;
-        outcomes.feathers_gained = 1 + species.scouting_skill;
+        outcomes.resources_gained = calculateResourcesGained(species.gathering_skill);
+        outcomes.feathers_gained = calculateFeatherChance(species.scouting_skill);
         break;
     
       default:
-        throw new Error(`Action type "${action}" not supported yet.`);
+        throw new Error(`Action type "${action}" not supported.`);
     }    
 
     // Insert session outcomes
@@ -177,8 +189,24 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to update ecosystem: ${updateError.message}`);
     }
 
+    // Fetch updated ecosystem
+    const { data: updatedEcosystem, error: ecosystemFetchError } = await supabase
+      .from("ecosystem")
+      .select("*")
+      .eq("user_id", user_id)
+      .single();
+
+    if (ecosystemFetchError || !updatedEcosystem) {
+      throw new Error("Failed to fetch updated ecosystem.");
+    }
+
     return new Response(
-      JSON.stringify({ status: "success", message: "Session outcomes processed successfully." }),
+      JSON.stringify({
+        status: "success",
+        message: "Session outcomes processed successfully.",
+        session_outcomes: outcomes,
+        updated_ecosystem: updatedEcosystem,
+      }),
       { status: 200 }
     );
   } catch (err) {

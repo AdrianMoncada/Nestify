@@ -1,8 +1,3 @@
-// Follow this setup guide to integrate the Deno language server with your editor:
-// https://deno.land/manual/getting_started/setup_your_environment
-// This enables autocomplete, go to definition, etc.
-
-// Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -56,16 +51,20 @@ Deno.serve(async (req) => {
       );
     }
 
+    let sessionOutcomes = null;
+    let updatedEcosystem = null;
+
+    // Only process outcomes if completing the session
     if (status_field === "completed" && status_value === true) {
       const response = await fetch(`${supabaseUrl}/functions/v1/handle_session_outcomes`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json" /**,
-          Authorization: `Bearer ${supabaseKey}`, */
+          "Content-Type": "application/json",
+          // Authorization: `Bearer ${supabaseKey}`,
         },
         body: JSON.stringify({ session_id }),
       });
-    
+
       if (!response.ok) {
         const errorBody = await response.json();
         return new Response(
@@ -76,17 +75,21 @@ Deno.serve(async (req) => {
           { status: 400 }
         );
       }
+
+      const responseBody = await response.json();
+      sessionOutcomes = responseBody.session_outcomes;
+      updatedEcosystem = responseBody.updated_ecosystem;
     }
-    
 
     return new Response(
       JSON.stringify({
         status: "success",
-        message: `Session ${status_field} updated to ${status_value}.`,
+        message: "Session status updated successfully.",
+        session_outcomes: sessionOutcomes,
+        updated_ecosystem: updatedEcosystem,
       }),
       { status: 200 }
     );
-    
   } catch (err) {
     return new Response(
       JSON.stringify({ status: "error", message: err.message }),
