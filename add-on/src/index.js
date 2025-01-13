@@ -1,6 +1,8 @@
 import React from "react";
-import ReactDOM from "react-dom";
-import BirdSession from "./BirdSession";
+import { createRoot } from 'react-dom/client';
+import { App } from "./BirdSessionV3";
+import './styles.css';
 
-ReactDOM.render(<BirdSession />, document.getElementById("root"));
-
+const container = document.getElementById('root');
+const root = createRoot(container);
+root.render(<App />);

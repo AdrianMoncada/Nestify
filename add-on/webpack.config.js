@@ -1,26 +1,51 @@
-const path = require("path");
+const path = require('path');
 
 module.exports = {
-  entry: "./src/index.js",
+  mode: 'development',
+  entry: './src/index.js',
   output: {
-    filename: "bundle.js",
-    path: path.resolve(__dirname, "dist"),
+    filename: 'bundle.js',
+    path: path.resolve(__dirname, 'dist'),
   },
   module: {
     rules: [
       {
-        test: /\.js$/,
+        test: /\.(js|jsx)$/,
         exclude: /node_modules/,
         use: {
-          loader: "babel-loader",
-        },
+          loader: 'babel-loader',
+          options: {
+            presets: ['@babel/preset-react', '@babel/preset-env']
+          }
+        }
       },
-    ],
+      {
+        test: /\.css$/i,
+        use: [
+          'style-loader',
+          {
+            loader: 'css-loader',
+            options: {
+              importLoaders: 1,
+            }
+          },
+          {
+            loader: 'postcss-loader',
+            options: {
+              postcssOptions: {
+                plugins: [
+                  require('tailwindcss'),
+                  require('autoprefixer'),
+                ],
+              },
+            },
+          },
+        ],
+      },
+    ]
   },
   resolve: {
-    extensions: [".js", ".jsx"],
-  },
-  devtool: false, // Desactiva la generación de source maps con eval()
-  mode: "production", // Usa modo production para evitar eval()
+    extensions: ['.js', '.jsx']
+  }
 };
 
