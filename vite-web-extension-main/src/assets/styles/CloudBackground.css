@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+.cloud-background {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: 24px;
+  }
+  
+  @keyframes floatCloud {
+    from {
+      transform: translateX(-120px);
+    }
+    to {
+      transform: translateX(420px);
+    }
+  }
+  
+  .cloud {
+    position: absolute;
+    background: #E7F5E4;
+    border-radius: 50px;
+    width: 120px;
+    height: 40px;
+    opacity: 0.8;
+  }
+  
+  .cloud::before,
+  .cloud::after {
+    content: "";
+    position: absolute;
+    background: #E7F5E4;
+    border-radius: 50%;
+  }
+  
+  .cloud::before {
+    width: 50px;
+    height: 50px;
+    top: -20px;
+    left: 15px;
+  }
+  
+  .cloud::after {
+    width: 60px;
+    height: 60px;
+    top: -25px;
+    right: 15px;
+  }
+  
+  .cloud-1 {
+    top: 20%;
+    animation: floatCloud 15s linear infinite;
+  }
+  
+  .cloud-2 {
+    top: 50%;
+    animation: floatCloud 20s linear infinite;
+    animation-delay: -10s;
+  }
+  
+  .cloud-3 {
+    top: 75%;
+    animation: floatCloud 17s linear infinite;
+    animation-delay: -5s;
+  }
