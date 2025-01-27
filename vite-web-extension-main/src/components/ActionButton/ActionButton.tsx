@@ -19,7 +19,7 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
   onClick 
 }) => {
   const Icon = actionIcons[action];
-  const baseStyle = "border-2 border-[#784E2F] transition-all shadow-[0_6px_0_#784E2F] active:translate-y-[6px] active:shadow-[0_0_0_#784E2F]";
+  const baseStyle = "border-2 border-[#784E2F] transition-all shadow-[0_6px_0_#784E2F] active:translate-y-[6px] active:shadow-[0_0_0_#784E2F] hover:bg-yellowLight";
   const activeStyle = selectedAction === action ? "bg-yellow" : "bg-white";
 
   return (

@@ -8,7 +8,7 @@ interface CarouselButtonProps {
 
 export const CarouselButton: React.FC<CarouselButtonProps> = ({ direction, onClick }) => {
   const baseButtonStyle = "border-2 border-brown transition-all active:shadow-[0_0_0_darkBrown] active:translate-y-[6px]";
-  const yellowButtonStyle = `${baseButtonStyle} hover:bg-yellowLight bg-yellow shadow-[0_6px_0_yellowDark]`;
+  const yellowButtonStyle = `${baseButtonStyle} hover:bg-yellowLight bg-white shadow-[0_6px_0_yellowDark]`;
 
   return (
     <button

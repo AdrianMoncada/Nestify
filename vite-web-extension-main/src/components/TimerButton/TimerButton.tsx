@@ -10,7 +10,7 @@ export const TimerButton: React.FC<TimerButtonProps> = ({
   type, 
   onClick 
 }) => {
-  const baseStyle = "w-12 h-12 rounded-2xl flex items-center justify-center border-2 border-[#784E2F] bg-[#FEC651] shadow-[0_6px_0_#784E2F] transition-all active:translate-y-[6px] active:shadow-[0_0_0_#784E2F]";
+  const baseStyle = "w-10 h-10 rounded-2xl flex items-center justify-center border-2 border-brown bg-white shadow-[0_6px_0_#784E2F] transition-all active:translate-y-[6px] active:shadow-[0_0_0_#784E2F] hover:bg-yellowLight";
 
   return (
     <button
