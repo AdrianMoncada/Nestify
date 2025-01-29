@@ -7,11 +7,13 @@ import { TimerButton } from "../../components/TimerButton/TimerButton";
 import Robin from "../../assets/img/Robin.png";
 import Crow from "../../assets/img/Crow.png";
 import Hornero from "../../assets/img/Hornero.png";
+import Pelican from "../../assets/img/Pelican.png";
 
 const BIRDS = [
   { name: "Sparrow", description: "Reliable all-rounder", image: Robin },
   { name: "Crow", description: "Find rare items", image: Crow },
   { name: "Hornero", description: "Builds larger nests", image: Hornero },
+  { name: "Pelican", description: "Gather more resources", image: Pelican },
 ];
 
 const TIMER_OPTIONS = [10, 15, 20, 25, 30];
@@ -30,16 +32,16 @@ export default function SelectionScreen() {
   };
 
   const BirdCard = () => (
-    <div className="bg-white/30 backdrop-blur-sm rounded-2xl p-4 w-[280px]">
+    <div className="bg-white/30 backdrop-blur-sm rounded-2xl p-2 w-[280px]">
       <div className="flex items-center gap-4">
-        <div className="w-[160px] h-[160px] rounded-xl overflow-hidden flex-shrink-0">
+        <div className="w-[170px] h-[170px] rounded-xl overflow-hidden flex-shrink-0">
           <img 
             src={BIRDS[currentBird].image} 
             alt={BIRDS[currentBird].name} 
             className="w-full h-full object-cover"
           />
         </div>
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-2">
           <h2 className="text-lg font-medium text-brown">
             {BIRDS[currentBird].name}
           </h2>

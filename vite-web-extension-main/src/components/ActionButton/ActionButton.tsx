@@ -26,11 +26,18 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
   onClick
 }) => {
   const Icon = actionIcons[action];
-  const baseStyle = "border-2 border-brown transition-all";
-  const shadowStyle = selectedAction === action
+  const isSelected = selectedAction === action;
+  
+  const baseStyle = "border-2 border-brown bg-white transition-all";
+  const shadowStyle = isSelected
     ? "translate-y-1.5 shadow-none"
-    : "shadow-[0_6px_0_#784E2F] hover:shadow-[0_4px_0_#784E2F] hover:translate-y-0.5";
-  const activeStyle = selectedAction === action ? "bg-yellow" : "bg-white hover:bg-yellowLight";
+    : "shadow-[0_6px_0_#784E2F] hover:shadow-[0_4px_0_#957F66]";
+  const activeStyle = isSelected
+    ? "border-yellowLight ring-2 ring-yellow/50 ring-offset-1 ring-offset-transparent" 
+    : "hover:border-lightBrown";
+  const iconStyle = isSelected
+    ? "text-yellowLight"
+    : "text-brown group-hover:text-lightBrown";
 
   return (
     <Tooltip
@@ -40,9 +47,9 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
     >
       <button
         onClick={onClick}
-        className={`w-14 h-14 rounded-2xl flex items-center justify-center ${baseStyle} ${shadowStyle} ${activeStyle}`}
+        className={`group w-14 h-14 rounded-2xl flex items-center justify-center ${baseStyle} ${shadowStyle} ${activeStyle}`}
       >
-        <Icon className="w-6 h-6 text-brown" />
+        <Icon className={`w-6 h-6 transition-colors ${iconStyle}`} />
       </button>
     </Tooltip>
   );
