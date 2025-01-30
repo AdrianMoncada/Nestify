@@ -9,9 +9,9 @@ const actionIcons = {
 };
 
 const tooltipContent = {
-  home: "Build nests using gathered materials to expand your habitat for more birds.",
-  leaf: "Gather resources to grow your ecosystem.",
-  egg: "Hatch eggs using magical feathers to add new birds to your flock."
+  home: "Build nests using gathered materials to expand your ecosystem for more birds",
+  leaf: "Gather resources to grow your ecosystem",
+  egg: "Hatch eggs using magical feathers to add new birds to your ecosystem"
 };
 
 interface ActionButtonProps {
@@ -31,7 +31,7 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
   const baseStyle = "border-2 border-brown bg-white transition-all";
   const shadowStyle = isSelected
     ? "translate-y-1.5 shadow-none"
-    : "shadow-[0_6px_0_#784E2F] hover:shadow-[0_4px_0_#957F66]";
+    : "shadow-[0_6px_0_#784E2F] hover:shadow-[0_6px_0_#957F66]";
   const activeStyle = isSelected
     ? "border-yellowLight ring-2 ring-yellow/50 ring-offset-1 ring-offset-transparent" 
     : "hover:border-lightBrown";

@@ -20,7 +20,7 @@ const TIMER_OPTIONS = [10, 15, 20, 25, 30];
 const ACTIONS = ["home", "leaf", "egg"] as const;
 
 export default function SelectionScreen() {
-  const [currentBird, setCurrentBird] = useState(0);
+  const [currentBird, setCurrentBird] = useState(3);
   const [selectedAction, setSelectedAction] = useState<typeof ACTIONS[number]>("leaf");
   const [timer, setTimer] = useState(25);
 
@@ -34,7 +34,7 @@ export default function SelectionScreen() {
   const BirdCard = () => (
     <div className="bg-white/30 backdrop-blur-sm rounded-2xl p-2 w-[280px]">
       <div className="flex items-center gap-4">
-        <div className="w-[170px] h-[170px] rounded-xl overflow-hidden flex-shrink-0">
+        <div className="w-[175px] h-[175px] rounded-xl overflow-hidden flex-shrink-0">
           <img 
             src={BIRDS[currentBird].image} 
             alt={BIRDS[currentBird].name} 
@@ -59,7 +59,7 @@ export default function SelectionScreen() {
         Select Your Bird
       </h1>
 
-      <div className="flex items-center justify-center gap-4 mb-3">
+      <div className="flex items-center justify-center gap-2 mb-3">
         <CarouselButton 
           direction="prev" 
           onClick={() => setCurrentBird((prev) => (prev - 1 + BIRDS.length) % BIRDS.length)}
