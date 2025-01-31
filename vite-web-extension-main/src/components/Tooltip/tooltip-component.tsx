@@ -49,8 +49,8 @@ export const Tooltip = ({
         <div className={`absolute z-10 w-48 ${positionClasses[position]}`}>
           <div className="bg-white border-2 border-[#8B4513] rounded-lg shadow-lg p-2 animate-fadeIn">
             <div className="flex items-start gap-1.5">
-              {getIcon()}
-              <p className="text-xs text-gray-700">{content}</p>
+              {/* {getIcon()} */}
+              <p className="text-sm text-brown">{content}</p>
             </div>
           </div>
         </div>

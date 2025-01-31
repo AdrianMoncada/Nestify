@@ -13,3 +13,14 @@ body {
   width: 100%;
   height: 100%;
 }
+
+@font-face {
+  font-family: 'Chilanka';
+  src: url('../../assets/fonts/Chilanka/Chilanka-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+body {
+  font-family: 'Chilanka', cursive;
+}

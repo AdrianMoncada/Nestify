@@ -8,12 +8,13 @@ export const buttonVariants = {
     shadowHeight: 10
   },
   standardPositive: {
-    base: "w-full bg-yellow text-brown rounded-2xl py-3.5 font-medium border-2 border-brown",
-    hover: "hover:bg-yellowLight hover:shadow-[0_6px_0_#957F66] hover:border-lightBrown",
+    base: "w-full bg-yellow text-brown rounded-2xl py-3.5 font-medium border-2 border-brown text-lg",
+    hover: "hover:bg-yellowLight hover:shadow-[0_4px_0_#957F66] hover:border-lightBrown",
     active: "active:translate-y-[8px] active:shadow-[0_0_0_#784E2F] transition-all",
     withShadow: true,
     shadowColor: "#483626",
-    shadowHeight: 8
+    shadowHeight: 10,
+    selectedClass: "border-brown border-4",
   },
   yellow: {
     base: "bg-[#FEC651] border-2 border-[#784E2F] rounded-2xl",
