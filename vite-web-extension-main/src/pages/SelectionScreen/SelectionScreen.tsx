@@ -8,6 +8,8 @@ import Robin from "../../assets/img/Robin.png";
 import Crow from "../../assets/img/Crow.png";
 import Hornero from "../../assets/img/Hornero.png";
 import Pelican from "../../assets/img/Pelican.png";
+import { Home, Search, Trees, HelpCircle } from 'lucide-react';
+import { Tooltip} from "../../components/Tooltip/tooltip-component";
 
 interface Ecosystem {
   nest: number;
@@ -26,10 +28,38 @@ const MOCK_ECOSYSTEM: Ecosystem = {
 };
 
 const BIRDS = [
-  { name: "Sparrow", description: "Reliable all-rounder", image: Robin },
-  { name: "Crow", description: "Find rare items", image: Crow },
-  { name: "Hornero", description: "Builds larger nests", image: Hornero },
-  { name: "Pelican", description: "Gather more resources", image: Pelican },
+  { 
+    name: "Robin", 
+    role: "Unclassified",
+    roleIcon: <HelpCircle className="w-4 h-4 text-brown" />,
+    emoji: "❔",
+    tooltip: "No special abilities.",
+    image: Robin 
+  },
+  { 
+    name: "Crow", 
+    role: "Scout",
+    roleIcon: <Search className="w-4 h-4 text-brown" />,
+    emoji: "🔎",
+    tooltip: "Finds more magical feathers.",
+    image: Crow 
+  },
+  { 
+    name: "Hornero", 
+    role: "Nester",
+    roleIcon: <Home className="w-4 h-4 text-brown" />,
+    emoji: "🏡",
+    tooltip: "Builds bigger nests.",
+    image: Hornero 
+  },
+  { 
+    name: "Pelican", 
+    role: "Gatherer",
+    roleIcon: <Trees className="w-4 h-4 text-brown" />,
+    emoji: "🪵",
+    tooltip: "Collects extra resources.",
+    image: Pelican 
+  }
 ];
 
 const TIMER_OPTIONS = [10, 15, 20, 25, 30];
@@ -62,26 +92,31 @@ export default function SelectionScreen() {
   };
 
   const BirdCard = () => (
-    <div className="bg-white/30 backdrop-blur-sm rounded-2xl p-2 w-[280px]">
-      <div className="flex items-center gap-4">
-        <div className="w-[180px] h-[180px] rounded-xl overflow-hidden flex-shrink-0">
-          <img 
-            src={BIRDS[currentBird].image} 
-            alt={BIRDS[currentBird].name} 
+    <div className="bg-sky-100/30 backdrop-blur-sm rounded-2xl p-2 w-[280px]">
+      <div className="relative">
+        <div className="w-[180px] h-[180px] rounded-xl overflow-hidden">
+          <img
+            src={BIRDS[currentBird].image}
+            alt={BIRDS[currentBird].name}
             className="w-full h-full object-cover"
           />
         </div>
-        <div className="flex flex-col gap-2">
-          <h2 className="text-lg font-medium text-brown">
+        <div className="absolute -top-1 left-[140px] flex flex-col gap-2">
+          <h2 className="text-xl font-medium text-[#784E2F]">
             {BIRDS[currentBird].name}
           </h2>
-          <p className="text-xs text-brown/80">
-            {BIRDS[currentBird].description}
-          </p>
+          <Tooltip content={BIRDS[currentBird].tooltip}>
+            <div className="w-24 h-8 rounded-xl flex items-center justify-center gap-1.5 border-2 bg-white transition-all cursor-help">
+              {BIRDS[currentBird].roleIcon}
+              <span className="text-sm text-[#784E2F]">
+                {BIRDS[currentBird].role}
+              </span>
+            </div>
+          </Tooltip>
         </div>
       </div>
     </div>
-  );
+  );  
 
   return (
     <div className="relative z-10">
