@@ -8,7 +8,7 @@ import Robin from "../../assets/img/Robin.png";
 import Crow from "../../assets/img/Crow.png";
 import Hornero from "../../assets/img/Hornero.png";
 import Pelican from "../../assets/img/Pelican.png";
-import { Home, Search, Trees, HelpCircle } from 'lucide-react';
+import { Eye, Backpack, Wind, HousePlus } from 'lucide-react';
 import { Tooltip} from "../../components/Tooltip/tooltip-component";
 
 interface Ecosystem {
@@ -30,16 +30,16 @@ const MOCK_ECOSYSTEM: Ecosystem = {
 const BIRDS = [
   { 
     name: "Robin", 
-    role: "Unclassified",
-    roleIcon: <HelpCircle className="w-4 h-4 text-brown" />,
+    role: "Glider",
+    roleIcon: <Wind className="w-4 h-4 text-brown" />,
     emoji: "❔",
     tooltip: "No special abilities.",
     image: Robin 
   },
   { 
     name: "Crow", 
-    role: "Scout",
-    roleIcon: <Search className="w-4 h-4 text-brown" />,
+    role: "Searcher",
+    roleIcon: <Eye className="w-4 h-4 text-brown" />,
     emoji: "🔎",
     tooltip: "Finds more magical feathers.",
     image: Crow 
@@ -47,7 +47,7 @@ const BIRDS = [
   { 
     name: "Hornero", 
     role: "Nester",
-    roleIcon: <Home className="w-4 h-4 text-brown" />,
+    roleIcon: <HousePlus className="w-4 h-4 text-brown" />,
     emoji: "🏡",
     tooltip: "Builds bigger nests.",
     image: Hornero 
@@ -55,7 +55,7 @@ const BIRDS = [
   { 
     name: "Pelican", 
     role: "Gatherer",
-    roleIcon: <Trees className="w-4 h-4 text-brown" />,
+    roleIcon: <Backpack className="w-4 h-4 text-brown" />,
     emoji: "🪵",
     tooltip: "Collects extra resources.",
     image: Pelican 
@@ -101,18 +101,21 @@ export default function SelectionScreen() {
             className="w-full h-full object-cover"
           />
         </div>
-        <div className="absolute -top-1 left-[140px] flex flex-col gap-2">
+        <div className="absolute top-5 left-[160px] flex flex-col gap-0.5">
           <h2 className="text-xl font-medium text-[#784E2F]">
             {BIRDS[currentBird].name}
           </h2>
           <Tooltip content={BIRDS[currentBird].tooltip}>
-            <div className="w-24 h-8 rounded-xl flex items-center justify-center gap-1.5 border-2 bg-white transition-all cursor-help">
-              {BIRDS[currentBird].roleIcon}
-              <span className="text-sm text-[#784E2F]">
-                {BIRDS[currentBird].role}
-              </span>
-            </div>
-          </Tooltip>
+      <div className="h-8 min-w-[6rem] px-2 rounded-xl flex items-center justify-center gap-1.5 bg-white transition-all cursor-help">
+        <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+          {BIRDS[currentBird].roleIcon}
+        </div>
+        <span className="text-sm text-[#784E2F] truncate">
+          {BIRDS[currentBird].role}
+        </span>
+      </div>
+    </Tooltip>
+
         </div>
       </div>
     </div>
