@@ -1,23 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { Square, Bird, Home, Clock } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Bird, Clock, Egg } from "lucide-react";
 import { Tooltip } from "../../components/Tooltip/tooltip-component";
-// import { RainDrop } from "./components/RainDrop";
-export default function TimerScreen() {
+import { useCloudAnimation } from '../../context/CloudAnimationContext';
+import { EggAnimation } from '../../assets/animations/EggAnimation';
+import { StopButton } from '../../components/StopButton/StopButton';
+import { Button } from '../../components/button/Button';
+
+const TimerScreen: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [isRunning, setIsRunning] = useState(true);
-  const [cloudsMoving, setCloudsMoving] = useState(true);
   const [showRain, setShowRain] = useState(false);
-  const rainDrops = Array.from(
-    {
-      length: 40,
-    },
-    (_, i) => ({
-      x: Math.random() * 400,
-      delay: Math.random() * 2,
-    }),
-  );
+  const { setCloudsMoving } = useCloudAnimation();
+
   useEffect(() => {
     if (!isRunning) return;
     const timer = setInterval(() => {
@@ -25,47 +20,19 @@ export default function TimerScreen() {
     }, 1000);
     return () => clearInterval(timer);
   }, [isRunning]);
+
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
   const formattedTime = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+
+  const handleStopClick = () => {
+    setShowModal(true);
+    setCloudsMoving(false);
+    setShowRain(true);
+  };
+
   return (
-    <div className="relative w-[400px] h-[550px] overflow-hidden bg-[#CFF1D8] rounded-xl mx-auto border-2 border-[#784E2F]">
-      <AnimatePresence>
-        {[...Array(12)].map((_, i) => (
-          <motion.div
-            key={`cloud-${i}`}
-            className="absolute bg-[#E7F5E4]"
-            initial={{
-              x: -150,
-              y: (i % 6) * 90 + 20,
-              opacity: 0.8,
-            }}
-            animate={{
-              x: cloudsMoving ? 450 : null,
-            }}
-            transition={{
-              duration: 20,
-              repeat: Infinity,
-              ease: "linear",
-              delay: (i % 6) * 3,
-            }}
-            style={{
-              width: "120px",
-              height: "60px",
-              borderRadius: "30px",
-            }}
-          />
-        ))}
-      </AnimatePresence>
-      <AnimatePresence>
-        {/* {showRain && (
-          <>
-            {rainDrops.map((drop, i) => (
-              <RainDrop key={`rain-${i}`} x={drop.x} delay={drop.delay} />
-            ))}
-          </>
-        )} */}
-      </AnimatePresence>
+    <div>
       <div className="relative z-10 flex items-center justify-center gap-6 p-4 mx-4 mt-4 bg-white/80 rounded-2xl">
         <Tooltip content="Finds rare items">
           <div className="flex items-center gap-2 text-[#784E2F] cursor-help">
@@ -75,8 +42,8 @@ export default function TimerScreen() {
         </Tooltip>
         <Tooltip content="Build a nest using resources">
           <div className="flex items-center gap-2 text-[#784E2F] cursor-help">
-            <Home size={20} />
-            <span>Build</span>
+            <Egg size={20} />
+            <span>Hatch</span>
           </div>
         </Tooltip>
         <Tooltip content="Minutes for focus session">
@@ -86,33 +53,33 @@ export default function TimerScreen() {
           </div>
         </Tooltip>
       </div>
-      <div className="absolute inset-x-0 top-[100px] bottom-0 z-10">
-        <div
-          className="relative mx-auto"
-          style={{
-            width: "288px",
-            height: "288px",
-          }}
-        >
-          <div className="absolute inset-0 bg-white rounded-[50%] shadow-lg flex items-center justify-center">
-            <button
-              onClick={() => {
-                setShowModal(true);
-                setCloudsMoving(false);
-                setShowRain(true);
-              }}
-              className="p-4 text-[#784E2F] transition-colors duration-200 hover:text-red-500"
-            >
-              <Square size={48} strokeWidth={1.5} />
-            </button>
+
+      <div className="absolute inset-x-0 top-[60px] bottom-0 z-10">
+        <div className="relative mx-auto" style={{ width: "288px", height: "288px" }}>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="relative" style={{ width: "148px", height: "148px" }}>
+              <EggAnimation />
+            </div>
           </div>
         </div>
-        <div className="absolute bottom-4 left-0 right-0 text-center">
-          <div className="text-[5.5rem] font-bold text-[#784E2F]">
-            {formattedTime}
+
+        <div className="absolute inset-x-0 flex justify-center px-4">
+        <div className="flex flex-col items-center gap-3">
+          
+            <div className="flex items-center justify-center">
+              <span className="text-[#784E2F] text-7xl font-bold">{formattedTime}</span>
+            </div>
+          
+            <div className="w-full">
+              <Button variant="primary" onClick={handleStopClick} className="text-sm px-8">
+                Stop Focus Session
+              </Button>
           </div>
+
         </div>
       </div>
+      </div>
+
       {showModal && (
         <div
           className="absolute inset-0 z-20 flex items-center justify-center bg-black/20"
@@ -156,4 +123,6 @@ export default function TimerScreen() {
       )}
     </div>
   );
-}
+};
+
+export default TimerScreen;

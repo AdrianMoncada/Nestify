@@ -25,6 +25,14 @@
   width: 120px;
   height: 40px;
   opacity: 0.8;
+  will-change: transform;
+  /* Agregamos la animación por defecto aquí */
+  animation: floatCloud 20s linear infinite;
+}
+
+/* La nube se detendrá cuando su padre tenga la clase 'paused' */
+.cloud-background.paused .cloud {
+  animation-play-state: paused;
 }
 
 .cloud::before,

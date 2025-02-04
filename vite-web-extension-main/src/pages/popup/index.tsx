@@ -8,14 +8,19 @@ import LoginScreen from '../LoginScreen/LoginScreen';
 import SelectionScreen from "../SelectionScreen/SelectionScreen";
 import AppLayout from "../../components/AppLayout/AppLayout";
 import TimerScreen from "../TimerScreen/TimerScreen";
+import { CloudAnimationProvider } from '../../context/CloudAnimationContext';
 
 function init() {
   const rootContainer = document.querySelector("#__root");
   if (!rootContainer) throw new Error("Can't find Popup root element");
   const root = createRoot(rootContainer);
-  root.render(<AppLayout>
-    <TimerScreen/>
-  </AppLayout>);
+  root.render(
+    <CloudAnimationProvider>
+      <AppLayout>
+        <TimerScreen />
+      </AppLayout>
+    </CloudAnimationProvider>
+  );
 }
 
 init();
