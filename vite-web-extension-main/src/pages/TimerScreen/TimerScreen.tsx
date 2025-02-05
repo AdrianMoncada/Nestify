@@ -5,6 +5,7 @@ import { useCloudAnimation } from '../../context/CloudAnimationContext';
 import { EggAnimation } from '../../assets/animations/EggAnimation';
 import { StopButton } from '../../components/StopButton/StopButton';
 import { Button } from '../../components/button/Button';
+import { BuildAnimation } from '../../assets/animations/BuildAnimation';
 
 const TimerScreen: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
@@ -58,7 +59,7 @@ const TimerScreen: React.FC = () => {
         <div className="relative mx-auto" style={{ width: "288px", height: "288px" }}>
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="relative" style={{ width: "148px", height: "148px" }}>
-              <EggAnimation />
+              <BuildAnimation/>
             </div>
           </div>
         </div>
