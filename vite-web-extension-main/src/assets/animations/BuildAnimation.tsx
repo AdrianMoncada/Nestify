@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import Nest from "../img/Nest.png";
+import Bird from "../img/Bird.png";
 
 interface Particle {
   id: number;
@@ -90,9 +92,9 @@ export function BuildAnimation() {
   }, []);
 
   return (
-    <div className="relative w-full h-full">
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="relative w-[288px] h-[288px] rounded-full overflow-hidden">
+    
+      <div className="relative w-full h-full flex items-center justify-center">
+        <div className="relative w-full h-full flex items-center justify-center">
           <style>
             {`
               @keyframes working {
@@ -135,25 +137,28 @@ export function BuildAnimation() {
             />
           ))}
           <img
-            src="https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/318d23b8-5e6e-40d9-a17f-b9a3c1134969/dj1o1ky-7662d5a3-36b4-42ab-a773-f1ace6d2899c.png/v1/fill/w_282,h_258/red_bird_facing_back_by_blueytigercarlos2009_dj1o1ky-fullview.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MjU4IiwicGF0aCI6IlwvZlwvMzE4ZDIzYjgtNWU2ZS00MGQ5LWExN2YtYjlhM2MxMTM0OTY5XC9kajFvMWt5LTc2NjJkNWEzLTM2YjQtNDJhYi1hNzczLWYxYWNlNmQyODk5Yy5wbmciLCJ3aWR0aCI6Ijw9MjgyIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmltYWdlLm9wZXJhdGlvbnMiXX0.FEEwuX8nI1iI989Yt9igK7m-PyQLp9l3c4BcogRAuAQ"
+            src={Bird}
             alt="Red bird viewed from behind"
             className="absolute w-[102px] left-1/2 bottom-[120px] z-10"
             style={{
               animation: "working 1.5s ease-in-out infinite",
               transition: `all ${movementDuration}ms ease-in-out`,
+              zIndex: 2,
+              bottom: "45px"
             }}
           />
           <img
-            src="https://cdni.iconscout.com/illustration/premium/thumb/chicken-eggs-in-the-nest-illustration-download-svg-png-gif-file-formats--egg-goose-breeding-poultry-species-pack-animal-illustrations-10960751.png?f=webp"
+            src={Nest}
             alt="Bird nest"
-            className="absolute w-[500px] left-1/2 -translate-x-1/2 bottom-2 transition-opacity duration-1000"
+            className="absolute w-[204px] left-1/2 -translate-x-1/2 bottom-2 transition-opacity duration-1000"
             style={{
               opacity: isResetting ? 0 : nestOpacity,
               animation: `nestShake 0.3s ease-out ${shakeKey}`,
+              zIndex: 1
             }}
           />
         </div>
       </div>
-    </div>
+    
   );
 }

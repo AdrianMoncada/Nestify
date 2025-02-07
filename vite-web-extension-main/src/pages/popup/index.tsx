@@ -9,6 +9,7 @@ import SelectionScreen from "../SelectionScreen/SelectionScreen";
 import AppLayout from "../../components/AppLayout/AppLayout";
 import TimerScreen from "../TimerScreen/TimerScreen";
 import { CloudAnimationProvider } from '../../context/CloudAnimationContext';
+import App from '../../App';
 
 function init() {
   const rootContainer = document.querySelector("#__root");
@@ -17,7 +18,7 @@ function init() {
   root.render(
     <CloudAnimationProvider>
       <AppLayout>
-        <TimerScreen />
+        < App/>
       </AppLayout>
     </CloudAnimationProvider>
   );

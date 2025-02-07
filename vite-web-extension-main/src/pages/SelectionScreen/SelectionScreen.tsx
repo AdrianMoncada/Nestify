@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate, useLocation} from "react-router-dom";
 import { Button } from "../../components/button/Button";
 import { CarouselButton } from "../../components/CarouselButton/CarouselButton";
 import { ActionButton } from "../../components/ActionButton/ActionButton";
@@ -10,6 +11,7 @@ import Hornero from "../../assets/img/Hornero.png";
 import Pelican from "../../assets/img/Pelican.png";
 import { Eye, Backpack, Wind, HousePlus } from 'lucide-react';
 import { Tooltip} from "../../components/Tooltip/tooltip-component";
+import { SessionState} from "../../types/session-types";
 
 interface Ecosystem {
   nest: number;
@@ -23,8 +25,8 @@ const MOCK_ECOSYSTEM: Ecosystem = {
   nest: 2,
   population: 8,
   max_population: 10,
-  feathers: 0,
-  resources: 0,
+  feathers: 1,
+  resources: 1,
 };
 
 const BIRDS = [
@@ -63,13 +65,23 @@ const BIRDS = [
 ];
 
 const TIMER_OPTIONS = [10, 15, 20, 25, 30];
-const ACTIONS = ["home", "leaf", "egg"] as const;
+const ACTIONS = ["Build", "Gather", "Hatch"] as const;
 
 export default function SelectionScreen() {
+  const navigate = useNavigate(); 
   const [currentBird, setCurrentBird] = useState(3);
-  const [selectedAction, setSelectedAction] = useState<typeof ACTIONS[number]>("leaf");
+  const [selectedAction, setSelectedAction] = useState<typeof ACTIONS[number]>("Gather");
   const [timer, setTimer] = useState(25);
   const [ecosystem] = useState<Ecosystem>(MOCK_ECOSYSTEM);
+
+  const handleStartSession = () => {
+    const session: SessionState = {
+      selectedBird: BIRDS[currentBird],
+      selectedAction: selectedAction,
+      selectedTime: timer
+    };
+    navigate('/timer', { state: session });
+  };
 
   const handleTimerAdjust = (amount: number) => {
     const newIndex = TIMER_OPTIONS.indexOf(timer) + Math.sign(amount);
@@ -80,11 +92,11 @@ export default function SelectionScreen() {
 
   const validateAction = (action: typeof ACTIONS[number]): boolean => {
     switch (action) {
-      case "egg":
+      case "Hatch":
         return ecosystem.feathers >= 1 && ecosystem.population < ecosystem.max_population;
-      case "home":
+      case "Build":
         return ecosystem.resources >= 1;
-      case "leaf":
+      case "Gather":
         return true; // Gather action doesn't need validation
       default:
         return false;
@@ -177,7 +189,7 @@ export default function SelectionScreen() {
 
       <div className="flex justify-center">
         <div className="w-4/5">
-          <Button variant="primary" >Start Focus Session</Button>
+          <Button variant="primary" onClick={handleStartSession}>Start Focus Session</Button>
         </div>
       </div>
     </div>

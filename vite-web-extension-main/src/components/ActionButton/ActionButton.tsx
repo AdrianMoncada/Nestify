@@ -3,19 +3,19 @@ import { Leaf, Home, Egg } from 'lucide-react';
 import { Tooltip } from '../../components/Tooltip/tooltip-component';
 
 const actionIcons = {
-  leaf: Leaf,
-  home: Home,
-  egg: Egg
+  Gather: Leaf,
+  Build: Home,
+  Hatch: Egg
 };
 
 const tooltipContent = {
-  home: "• Build: Use resources to expand your ecosystem",
-  leaf: "• Gather: Collect resources for your ecosystem",
-  egg: "• Hatch: Use magic feathers to get new birds"
+  Build: "• Build: Use resources to expand your ecosystem",
+  Gather: "• Gather: Collect resources for your ecosystem",
+  Hatch: "• Hatch: Use magic feathers to get new birds"
 };
 
 interface ActionButtonProps {
-  action: 'leaf' | 'home' | 'egg';
+  action: 'Gather' | 'Build' | 'Hatch';
   selectedAction: string;
   onClick: () => void;
   isValid: boolean;
