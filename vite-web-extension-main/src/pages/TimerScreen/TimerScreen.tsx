@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Bird, Clock, Egg, Eye, Backpack, Leaf, House, LeafyGreen } from "lucide-react";
 import { Tooltip } from "../../components/Tooltip/tooltip-component";
 import { useCloudAnimation } from '../../context/CloudAnimationContext';
-import { StopButton } from '../../components/StopButton/StopButton';
 import { Button } from '../../components/button/Button';
 import {SessionState} from '../../types/session-types';
 import { EggAnimation } from '../../assets/animations/EggAnimation';
