@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { X, Home, Leaf, Feather, Bird, Heart } from "lucide-react";
 import HatchRewardAnimation from "../../assets/animations/hatch-reward-animation";
 import { Button } from "../../components/button/Button";
+import { Tooltip} from "../../components/Tooltip/tooltip-component";
 
 export default function RewardScreen() {
   const descriptions = {
@@ -101,26 +102,23 @@ export default function RewardScreen() {
             },
           ].map((item, i) => (
             <div key={i} className="flex items-center gap-2">
-              <div className="group relative">
-                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center border-2 border-[#784E2F] shadow-[0_2px_0_#9ca3af] hover:bg-gray-300 transition-colors cursor-help">
-                  <span className="text-[#784E2F]">{item.icon}</span>
-                </div>
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-white rounded text-sm text-[#784E2F] border border-[#784E2F] opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap">
-                  {descriptions[item.type]}
-                </div>
+            <Tooltip content={descriptions[item.type]} position="top">
+              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center border-2 border-[#784E2F] shadow-[0_2px_0_#9ca3af] hover:bg-gray-300 transition-colors cursor-help">
+                <span className="text-[#784E2F]">{item.icon}</span>
               </div>
-              <div className="w-[72px] h-[32px] bg-white rounded-2xl flex items-center justify-center">
-                <span className="font-medium text-lg text-[#784E2F]">
-                  {item.value}
-                </span>
-              </div>
-              <span
-                className={`text-base ${item.change.includes("-") ? "text-red" : item.change === "+0" ? "text-gray" : "text-green"}`}
-              >
-                {item.change}
+            </Tooltip>
+            <div className="w-[72px] h-[32px] bg-white rounded-2xl flex items-center justify-center">
+              <span className="font-medium text-lg text-[#784E2F]">
+                {item.value}
               </span>
             </div>
-          ))}
+            <span
+              className={`text-base ${item.change.includes("-") ? "text-red" : item.change === "+0" ? "text-gray" : "text-green"}`}
+            >
+              {item.change}
+            </span>
+          </div>
+        ))}
         </div>
         <div className="flex justify-center mb-4">
         <div className="w-5/5">

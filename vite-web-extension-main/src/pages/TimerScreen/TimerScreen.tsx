@@ -3,7 +3,7 @@ import { Bird, Clock, Egg, Eye, Backpack, Leaf, House, LeafyGreen } from "lucide
 import { Tooltip } from "../../components/Tooltip/tooltip-component";
 import { useCloudAnimation } from '../../context/CloudAnimationContext';
 import { Button } from '../../components/button/Button';
-import {SessionState} from '../../types/session-types';
+import { SessionState } from '../../types/session-types';
 import { EggAnimation } from '../../assets/animations/EggAnimation';
 import { BuildAnimation } from '../../assets/animations/BuildAnimation';
 import { AnimatedBird } from '../../assets/animations/animated-bird'; 
@@ -15,7 +15,7 @@ const TimerScreen: React.FC = () => {
   const session: SessionState = state
 
   const [showModal, setShowModal] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(session.selectedTime * 60);
+  const [timeLeft, setTimeLeft] = useState(session.selectedTime * 1);
   const [isRunning, setIsRunning] = useState(true);
   const [showRain, setShowRain] = useState(false);
   const { setCloudsMoving } = useCloudAnimation();
@@ -34,10 +34,52 @@ const TimerScreen: React.FC = () => {
   useEffect(() => {
     if (!isRunning) return;
     const timer = setInterval(() => {
-      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          // Clear the interval when we reach 0
+          clearInterval(timer);
+          handleSessionComplete();
+        }
+        return prev > 0 ? prev - 1 : 0;
+      });
     }, 1000);
     return () => clearInterval(timer);
   }, [isRunning]);
+
+  // Function to handle session completion
+  const handleSessionComplete = async () => {
+    // TODO: API Integration
+    // 1. Update session table
+    // await updateSession({
+    //   id: session.id,
+    //   completed: true,
+    //   cancelled: false
+    // });
+    
+    // 2. Get session outcome from backend
+    // const sessionOutcome = await getSessionOutcome(session.id);
+    // Store outcome in navigation state if needed
+    
+    // Navigate to reward screen
+    navigate('/reward');
+  };
+
+  // Function to handle session cancellation
+  const handleSessionCancel = async () => {
+    // TODO: API Integration
+    // Update session table with cancelled status
+    // await updateSession({
+    //   id: session.id,
+    //   completed: false,
+    //   cancelled: true
+    // });
+    
+    setIsRunning(false);
+    setShowModal(false);
+    setShowRain(false);
+    setCloudsMoving(true);
+    navigate('/');
+  };
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
@@ -112,13 +154,7 @@ const TimerScreen: React.FC = () => {
             </p>
             <div className="flex justify-center gap-4">
               <button
-                onClick={() => {
-                  setIsRunning(false);
-                  setShowModal(false);
-                  setShowRain(false);
-                  setCloudsMoving(true);
-                  navigate('/');
-                }}
+                onClick={handleSessionCancel}
                 className="px-6 py-2 text-white rounded-full bg-[#ED834D] shadow-[0_6px_0_0_#CA6F41] hover:brightness-110 active:shadow-[0_0px_0_0_#CA6F41] active:translate-y-[6px] transition-all duration-75"
               >
                 Yes

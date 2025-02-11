@@ -5,7 +5,7 @@ import RewardScreen from './pages/RewardScreen/RewardScreen';
 
 export default function App() {
   return (
-    <MemoryRouter initialEntries={['/reward']}>
+    <MemoryRouter initialEntries={['/']}>
       <Routes>
         <Route path="/" element={<SelectionScreen />} />
         <Route path="/timer" element={<TimerScreen />} />
