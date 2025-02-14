@@ -43,6 +43,13 @@ const TIMER_OPTIONS = [10, 15, 20, 25, 30];
 const ACTIONS = ["Build", "Gather", "Hatch"] as const;
 type ActionType = typeof ACTIONS[number];
 
+// Define interface for stored state
+interface StoredState {
+  currentBirdIndex: number;
+  selectedAction: ActionType;
+  timer: number;
+}
+
 export default function SelectionScreen() {
   const navigate = useNavigate();
   const [currentBirdIndex, setCurrentBirdIndex] = useState(0);
@@ -53,6 +60,44 @@ export default function SelectionScreen() {
   const [ecosystem, setEcosystem] = useState<Ecosystem | null>(null);
   const [userSpecies, setUserSpecies] = useState<Species[]>([]);
   const [birdImages, setBirdImages] = useState<Record<string, string>>({});
+
+  // Load stored state on initial render
+  useEffect(() => {
+    const loadStoredState = async () => {
+      try {
+        const result = await chrome.storage.local.get(['selectionState']);
+        if (result.selectionState) {
+          const storedState: StoredState = result.selectionState;
+          setCurrentBirdIndex(storedState.currentBirdIndex);
+          setSelectedAction(storedState.selectedAction);
+          setTimer(storedState.timer);
+        }
+      } catch (error) {
+        console.error('Error loading stored state:', error);
+      }
+    };
+
+    loadStoredState();
+  }, []);
+
+  // Save state changes to storage
+  useEffect(() => {
+    const saveState = async () => {
+      try {
+        await chrome.storage.local.set({
+          selectionState: {
+            currentBirdIndex,
+            selectedAction,
+            timer,
+          },
+        });
+      } catch (error) {
+        console.error('Error saving state:', error);
+      }
+    };
+
+    saveState();
+  }, [currentBirdIndex, selectedAction, timer]);
 
   // Load ecosystem and species data
   useEffect(() => {

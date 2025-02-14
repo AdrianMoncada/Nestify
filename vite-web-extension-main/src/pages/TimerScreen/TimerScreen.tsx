@@ -8,7 +8,8 @@ import { EggAnimation } from '../../assets/animations/EggAnimation';
 import { BuildAnimation } from '../../assets/animations/BuildAnimation';
 import { AnimatedBird } from '../../assets/animations/animated-bird'; 
 import { useNavigate, useLocation } from "react-router-dom";
-import { mockDb, Session, SessionOutcome } from "../../mockDatabase/mock-database";
+import { mockDb, Session, SessionOutcome, Ecosystem } from "../../mockDatabase/mock-database";
+import { FloatingHeader } from "../../components/FloatingHeader/floating-header";
 
 const TimerScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -20,7 +21,21 @@ const TimerScreen: React.FC = () => {
   const [isRunning, setIsRunning] = useState(true);
   const [showRain, setShowRain] = useState(false);
   const [currentSession, setCurrentSession] = useState<Session | null>(null);
+  const [ecosystem, setEcosystem] = useState<Ecosystem | null>(null);
   const { setCloudsMoving } = useCloudAnimation();
+
+  // Load ecosystem data when component mounts
+  useEffect(() => {
+    const loadEcosystem = async () => {
+      try {
+        const eco = await mockDb.getEcosystem("user1");
+        setEcosystem(eco);
+      } catch (error) {
+        console.error('Error loading ecosystem:', error);
+      }
+    };
+    loadEcosystem();
+  }, []);
 
   // Create session when component mounts
   useEffect(() => {
@@ -139,6 +154,16 @@ const TimerScreen: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen">
+      {ecosystem && (
+        <FloatingHeader
+          stats={{
+            nests: ecosystem.nests,
+            population: ecosystem.population,
+            feathers: ecosystem.feathers,
+            resources: ecosystem.resources,
+          }}
+        />
+      )}
       <div className="relative z-10 flex items-center justify-center gap-6 p-4 mx-4 mt-4 bg-white/80 rounded-2xl">
         <Tooltip content={session.selectedBird.tooltip}>
           <div className="flex items-center gap-2 text-[#784E2F] cursor-help">
