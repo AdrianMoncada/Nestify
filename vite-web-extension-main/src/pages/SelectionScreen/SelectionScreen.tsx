@@ -9,6 +9,7 @@ import { Eye, Backpack, Wind, HousePlus } from 'lucide-react';
 import { Tooltip } from "../../components/Tooltip/tooltip-component";
 import { SessionState } from "../../types/session-types";
 import { mockDb, Species, Ecosystem } from "../../mockDatabase/mock-database";
+import { FloatingHeader } from "../../components/FloatingHeader/floating-header";
 
 // Bird role configuration
 const BIRD_ROLES = {
@@ -166,6 +167,17 @@ export default function SelectionScreen() {
   };
 
   return (
+    <div className="relative">
+       {ecosystem && (
+        <FloatingHeader
+          stats={{
+            nests: ecosystem.nests,
+            population: ecosystem.population,
+            feathers: ecosystem.feathers,
+            resources: ecosystem.resources,
+          }}
+        />
+      )}
     <div className="relative z-10">
       <h1 className="text-center text-xl font-medium mb-2 mt-3 text-brown">
         Select Your Bird
@@ -230,6 +242,7 @@ export default function SelectionScreen() {
           </Button>
         </div>
       </div>
+    </div>
     </div>
   );
 }

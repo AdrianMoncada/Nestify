@@ -98,6 +98,12 @@ class MockDatabase {
       user_id: "user1",
       specie_id: "species-pelican",
       unlocked_at: new Date()
+    },
+    {
+      id: "collection1",
+      user_id: "user1",
+      specie_id: "species-crow",
+      unlocked_at: new Date()
     }
   ];
 
@@ -109,7 +115,7 @@ class MockDatabase {
       population: 8,
       max_population: 10,
       feathers: 1,
-      resources: 1
+      resources: 0
     }
   ];
 

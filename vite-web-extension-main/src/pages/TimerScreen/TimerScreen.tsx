@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Bird, Clock, Egg, Eye, Backpack, Leaf, House, LeafyGreen } from "lucide-react";
+import { Bird, Clock, Egg, House, Leaf } from "lucide-react";
 import { Tooltip } from "../../components/Tooltip/tooltip-component";
 import { useCloudAnimation } from '../../context/CloudAnimationContext';
 import { Button } from '../../components/button/Button';
@@ -7,18 +7,38 @@ import { SessionState } from '../../types/session-types';
 import { EggAnimation } from '../../assets/animations/EggAnimation';
 import { BuildAnimation } from '../../assets/animations/BuildAnimation';
 import { AnimatedBird } from '../../assets/animations/animated-bird'; 
-import { useNavigate, useLocation} from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { mockDb, Session, SessionOutcome } from "../../mockDatabase/mock-database";
 
 const TimerScreen: React.FC = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const session: SessionState = state
+  const session: SessionState = state;
 
   const [showModal, setShowModal] = useState(false);
   const [timeLeft, setTimeLeft] = useState(session.selectedTime * 1);
   const [isRunning, setIsRunning] = useState(true);
   const [showRain, setShowRain] = useState(false);
+  const [currentSession, setCurrentSession] = useState<Session | null>(null);
   const { setCloudsMoving } = useCloudAnimation();
+
+  // Create session when component mounts
+  useEffect(() => {
+    const createInitialSession = async () => {
+      const newSession = await mockDb.createSession({
+        user_id: "user1",
+        specie_id: session.selectedBird.id,
+        action: session.selectedAction,
+        duration: session.selectedTime,
+        completed: false,
+        start_time: new Date(),
+        cancelled: false
+      });
+      setCurrentSession(newSession);
+    };
+
+    createInitialSession();
+  }, []);
 
   const renderAnimation = () => {
     switch (session.selectedAction) {
@@ -31,54 +51,80 @@ const TimerScreen: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    if (!isRunning) return;
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          // Clear the interval when we reach 0
-          clearInterval(timer);
-          handleSessionComplete();
-        }
-        return prev > 0 ? prev - 1 : 0;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [isRunning]);
-
   // Function to handle session completion
   const handleSessionComplete = async () => {
-    // TODO: API Integration
-    // 1. Update session table
-    // await updateSession({
-    //   id: session.id,
-    //   completed: true,
-    //   cancelled: false
-    // });
+    if (!currentSession) return;
+
+    setIsRunning(false); // Stop the timer
     
-    // 2. Get session outcome from backend
-    // const sessionOutcome = await getSessionOutcome(session.id);
-    // Store outcome in navigation state if needed
-    
-    // Navigate to reward screen
-    navigate('/reward');
+    try {
+      // Update session as completed
+      const updatedSession = await mockDb.updateSession(currentSession.id, {
+        completed: true,
+        cancelled: false
+      });
+
+      if (updatedSession) {
+        // Generate session outcome
+        const sessionOutcome = await mockDb.createSessionOutcome(updatedSession);
+        
+        // Navigate to reward screen with the outcome
+        navigate('/reward', { 
+          state: { 
+            outcome: sessionOutcome,
+            session: updatedSession
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error completing session:', error);
+      // Handle error appropriately
+    }
   };
+
+  // Timer effect
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+
+    if (isRunning && timeLeft > 0) {
+      timer = setInterval(() => {
+        setTimeLeft((prev) => {
+          const newTime = prev - 1;
+          if (newTime <= 0) {
+            if (timer) clearInterval(timer);
+            handleSessionComplete();
+            return 0;
+          }
+          return newTime;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isRunning, timeLeft]);
 
   // Function to handle session cancellation
   const handleSessionCancel = async () => {
-    // TODO: API Integration
-    // Update session table with cancelled status
-    // await updateSession({
-    //   id: session.id,
-    //   completed: false,
-    //   cancelled: true
-    // });
-    
-    setIsRunning(false);
-    setShowModal(false);
-    setShowRain(false);
-    setCloudsMoving(true);
-    navigate('/');
+    if (!currentSession) return;
+
+    try {
+      // Update session as cancelled
+      await mockDb.updateSession(currentSession.id, {
+        completed: false,
+        cancelled: true
+      });
+      
+      setIsRunning(false);
+      setShowModal(false);
+      setShowRain(false);
+      setCloudsMoving(true);
+      navigate('/');
+    } catch (error) {
+      console.error('Error cancelling session:', error);
+      // Handle error appropriately
+    }
   };
 
   const minutes = Math.floor(timeLeft / 60);
@@ -102,7 +148,7 @@ const TimerScreen: React.FC = () => {
         </Tooltip>
         <Tooltip content="Current Action">
           <div className="flex items-center gap-2 text-[#784E2F] cursor-help">
-          {session.selectedAction === 'Hatch' ? <Egg size={20} /> : 
+            {session.selectedAction === 'Hatch' ? <Egg size={20} /> : 
              session.selectedAction === 'Build' ? <House size={20} /> :
              <Leaf size={20} />}
             <span>{session.selectedAction}</span>
