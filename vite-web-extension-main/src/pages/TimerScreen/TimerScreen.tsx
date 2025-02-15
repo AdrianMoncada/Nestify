@@ -8,8 +8,17 @@ import { EggAnimation } from '../../assets/animations/EggAnimation';
 import { BuildAnimation } from '../../assets/animations/BuildAnimation';
 import { AnimatedBird } from '../../assets/animations/animated-bird'; 
 import { useNavigate, useLocation } from "react-router-dom";
-import { mockDb, Session, SessionOutcome, Ecosystem } from "../../mockDatabase/mock-database";
+import { mockDb, Ecosystem } from "../../mockDatabase/mock-database";
 import { FloatingHeader } from "../../components/FloatingHeader/floating-header";
+
+interface TimerStorage {
+  startTime: number;
+  totalDuration: number;
+  selectedBird: any;
+  selectedAction: string;
+  selectedTime: number;
+  isRunning: boolean;
+}
 
 const TimerScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -17,14 +26,60 @@ const TimerScreen: React.FC = () => {
   const session: SessionState = state;
 
   const [showModal, setShowModal] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(session.selectedTime * 1);
+  const [timeLeft, setTimeLeft] = useState(0);
   const [isRunning, setIsRunning] = useState(true);
   const [showRain, setShowRain] = useState(false);
-  const [currentSession, setCurrentSession] = useState<Session | null>(null);
   const [ecosystem, setEcosystem] = useState<Ecosystem | null>(null);
+  const [currentTimerState, setCurrentTimerState] = useState<TimerStorage | null>(null);
   const { setCloudsMoving } = useCloudAnimation();
 
-  // Load ecosystem data when component mounts
+  // Initialize or restore timer state
+  useEffect(() => {
+    const initializeTimer = async () => {
+      try {
+        const storage = await chrome.storage.local.get(['timerState']);
+        const savedTimer: TimerStorage = storage.timerState;
+
+        if (savedTimer) {
+          // Calculate remaining time based on saved state
+          const currentTime = new Date().getTime();
+          const elapsedSeconds = Math.floor((currentTime - savedTimer.startTime) / 1000);
+          const remainingSeconds = savedTimer.totalDuration - elapsedSeconds;
+
+          if (remainingSeconds <= 0) {
+            // Timer has expired while extension was closed
+            await handleSessionComplete();
+          } else {
+            // Restore timer state
+            setTimeLeft(remainingSeconds);
+            setIsRunning(savedTimer.isRunning);
+            setCurrentTimerState(savedTimer);
+          }
+        } else if (session) {
+          // Initialize new timer
+          const newTimerState: TimerStorage = {
+            startTime: new Date().getTime(),
+            totalDuration: session.selectedTime * 1,
+            selectedBird: session.selectedBird,
+            selectedAction: session.selectedAction,
+            selectedTime: session.selectedTime,
+            isRunning: true
+          };
+
+          await chrome.storage.local.set({ timerState: newTimerState });
+          setTimeLeft(newTimerState.totalDuration);
+          setCurrentTimerState(newTimerState);
+          setIsRunning(true);
+        }
+      } catch (error) {
+        console.error('Error initializing timer:', error);
+      }
+    };
+
+    initializeTimer();
+  }, []);
+
+  // Load ecosystem data
   useEffect(() => {
     const loadEcosystem = async () => {
       try {
@@ -37,63 +92,37 @@ const TimerScreen: React.FC = () => {
     loadEcosystem();
   }, []);
 
-  // Create session when component mounts
-  useEffect(() => {
-    const createInitialSession = async () => {
-      const newSession = await mockDb.createSession({
-        user_id: "user1",
-        specie_id: session.selectedBird.id,
-        action: session.selectedAction,
-        duration: session.selectedTime,
-        completed: false,
-        start_time: new Date(),
-        cancelled: false
-      });
-      setCurrentSession(newSession);
-    };
-
-    createInitialSession();
-  }, []);
-
-  const renderAnimation = () => {
-    switch (session.selectedAction) {
-      case 'Hatch':
-        return <EggAnimation />;
-      case 'Build':
-        return <BuildAnimation />;
-      default:
-        return <AnimatedBird />;
-    }
-  };
-
-  // Function to handle session completion
+  // Handle timer completion
   const handleSessionComplete = async () => {
-    if (!currentSession) return;
-
-    setIsRunning(false); // Stop the timer
-    
     try {
-      // Update session as completed
-      const updatedSession = await mockDb.updateSession(currentSession.id, {
-        completed: true,
-        cancelled: false
-      });
+      // Clear timer state
+      await chrome.storage.local.remove(['timerState']);
+      setIsRunning(false);
 
-      if (updatedSession) {
-        // Generate session outcome
-        const sessionOutcome = await mockDb.createSessionOutcome(updatedSession);
-        
-        // Navigate to reward screen with the outcome
-        navigate('/reward', { 
-          state: { 
-            outcome: sessionOutcome,
-            session: updatedSession
-          }
-        });
-      }
+      // Create session outcome without using mockDb for timer state
+      const sessionData = {
+        user_id: "user1",
+        completed: true,
+        cancelled: false,
+        duration: currentTimerState?.selectedTime || 0,
+        specie_id: currentTimerState?.selectedBird?.id,
+        action: currentTimerState?.selectedAction,
+        start_time: new Date(currentTimerState?.startTime || 0)
+      };
+
+      // Only use mockDb for the final outcome
+      const completedSession = await mockDb.createSession(sessionData);
+      const sessionOutcome = await mockDb.createSessionOutcome(completedSession);
+
+      // Navigate to reward screen
+      navigate('/reward', { 
+        state: { 
+          outcome: sessionOutcome,
+          session: completedSession
+        }
+      });
     } catch (error) {
       console.error('Error completing session:', error);
-      // Handle error appropriately
     }
   };
 
@@ -120,16 +149,25 @@ const TimerScreen: React.FC = () => {
     };
   }, [isRunning, timeLeft]);
 
-  // Function to handle session cancellation
+  // Handle session cancellation
   const handleSessionCancel = async () => {
-    if (!currentSession) return;
-
     try {
-      // Update session as cancelled
-      await mockDb.updateSession(currentSession.id, {
+      // Clear timer state
+      await chrome.storage.local.remove(['timerState']);
+      
+      // Create cancelled session record
+      const sessionData = {
+        user_id: "user1",
         completed: false,
-        cancelled: true
-      });
+        cancelled: true,
+        duration: currentTimerState?.selectedTime || 0,
+        specie_id: currentTimerState?.selectedBird?.id,
+        action: currentTimerState?.selectedAction,
+        start_time: new Date(currentTimerState?.startTime || 0)
+      };
+
+      // Only use mockDb for the final record
+      await mockDb.createSession(sessionData);
       
       setIsRunning(false);
       setShowModal(false);
@@ -138,7 +176,20 @@ const TimerScreen: React.FC = () => {
       navigate('/');
     } catch (error) {
       console.error('Error cancelling session:', error);
-      // Handle error appropriately
+    }
+  };
+
+  // Render the appropriate animation
+  const renderAnimation = () => {
+    const action = currentTimerState?.selectedAction || session?.selectedAction;
+    
+    switch (action) {
+      case 'Hatch':
+        return <EggAnimation />;
+      case 'Build':
+        return <BuildAnimation />;
+      default:
+        return <AnimatedBird />;
     }
   };
 
@@ -152,6 +203,9 @@ const TimerScreen: React.FC = () => {
     setShowRain(true);
   };
 
+  // Get current session info for display
+  const displayState = currentTimerState || session;
+
   return (
     <div className="flex flex-col h-screen">
       {ecosystem && (
@@ -164,25 +218,26 @@ const TimerScreen: React.FC = () => {
           }}
         />
       )}
+
       <div className="relative z-10 flex items-center justify-center gap-6 p-4 mx-4 mt-4 bg-white/80 rounded-2xl">
-        <Tooltip content={session.selectedBird.tooltip}>
+        <Tooltip content={displayState?.selectedBird?.tooltip || "Bird"}>
           <div className="flex items-center gap-2 text-[#784E2F] cursor-help">
             <Bird size={20} />
-            <span>{session.selectedBird.name}</span>
+            <span>{displayState?.selectedBird?.name || "Bird"}</span>
           </div>
         </Tooltip>
         <Tooltip content="Current Action">
           <div className="flex items-center gap-2 text-[#784E2F] cursor-help">
-            {session.selectedAction === 'Hatch' ? <Egg size={20} /> : 
-             session.selectedAction === 'Build' ? <House size={20} /> :
+            {displayState?.selectedAction === 'Hatch' ? <Egg size={20} /> : 
+             displayState?.selectedAction === 'Build' ? <House size={20} /> :
              <Leaf size={20} />}
-            <span>{session.selectedAction}</span>
+            <span>{displayState?.selectedAction || "Action"}</span>
           </div>
         </Tooltip>
         <Tooltip content="Minutes for focus session">
           <div className="flex items-center gap-2 text-[#784E2F] cursor-help">
             <Clock size={20} />
-            <span>{session.selectedTime}</span>
+            <span>{Math.ceil(timeLeft / 60)}</span>
           </div>
         </Tooltip>
       </div>
