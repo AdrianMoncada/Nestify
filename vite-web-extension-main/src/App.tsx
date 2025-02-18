@@ -19,13 +19,12 @@ export default function App() {
           const elapsedSeconds = Math.floor((currentTime - savedTimer.startTime) / 1000);
           const remainingSeconds = savedTimer.totalDuration - elapsedSeconds;
 
-          if (remainingSeconds > 0 && savedTimer.isRunning) {
-            setInitialRoute('/timer');
-          } else {
-            setInitialRoute('/');
-            // Limpiar el estado si el timer ha expirado
-            await chrome.storage.local.remove(['timerState']);
-          }
+          // Siempre redirigimos a TimerScreen si hay un timer guardado
+          // TimerScreen se encargará de verificar si ha expirado y
+          // redirigir a RewardScreen cuando sea necesario
+          setInitialRoute('/timer');
+          
+          // No eliminar el timerState aquí - dejamos que TimerScreen lo maneje
         } else {
           setInitialRoute('/');
         }
@@ -41,7 +40,9 @@ export default function App() {
   }, []);
 
   if (isLoading) {
-    return null; // O un componente de loading si lo prefieres
+    return <div className="flex h-screen items-center justify-center text-[#784E2F] text-xl">
+      Loading...
+    </div>;
   }
 
   return (

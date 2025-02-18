@@ -8,7 +8,7 @@ import { EggAnimation } from '../../assets/animations/EggAnimation';
 import { BuildAnimation } from '../../assets/animations/BuildAnimation';
 import { AnimatedBird } from '../../assets/animations/animated-bird'; 
 import { useNavigate, useLocation } from "react-router-dom";
-import { mockDb, Ecosystem } from "../../mockDatabase/mock-database";
+import { mockDb, Ecosystem, Session } from "../../mockDatabase/mock-database";
 import { FloatingHeader } from "../../components/FloatingHeader/floating-header";
 
 interface TimerStorage {
@@ -31,12 +31,15 @@ const TimerScreen: React.FC = () => {
   const [showRain, setShowRain] = useState(false);
   const [ecosystem, setEcosystem] = useState<Ecosystem | null>(null);
   const [currentTimerState, setCurrentTimerState] = useState<TimerStorage | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { setCloudsMoving } = useCloudAnimation();
 
   // Initialize or restore timer state
   useEffect(() => {
     const initializeTimer = async () => {
       try {
+        setIsLoading(true);
         const storage = await chrome.storage.local.get(['timerState']);
         const savedTimer: TimerStorage = storage.timerState;
 
@@ -48,7 +51,7 @@ const TimerScreen: React.FC = () => {
 
           if (remainingSeconds <= 0) {
             // Timer has expired while extension was closed
-            await handleSessionComplete();
+            await handleExpiredTimer(savedTimer);
           } else {
             // Restore timer state
             setTimeLeft(remainingSeconds);
@@ -71,13 +74,58 @@ const TimerScreen: React.FC = () => {
           setCurrentTimerState(newTimerState);
           setIsRunning(true);
         }
+        setIsLoading(false);
       } catch (error) {
         console.error('Error initializing timer:', error);
+        setError('Error initializing timer. Please try again.');
+        setIsLoading(false);
       }
     };
 
     initializeTimer();
   }, []);
+
+  // Handle expired timer case specifically
+  const handleExpiredTimer = async (savedTimer: TimerStorage) => {
+    try {
+      // Clear timer state
+      await chrome.storage.local.remove(['timerState']);
+      setIsRunning(false);
+
+      // Create session data from saved timer state
+      const sessionData = {
+        user_id: "user1",
+        completed: true,
+        cancelled: false,
+        duration: savedTimer.selectedTime,
+        specie_id: savedTimer.selectedBird?.id,
+        action: savedTimer.selectedAction,
+        start_time: new Date(savedTimer.startTime)
+      };
+
+      // First create the session
+      const completedSession = await mockDb.createSession(sessionData);
+      
+      // Then get the session outcome
+      const sessionOutcome = await mockDb.createSessionOutcome(completedSession);
+
+      if (!sessionOutcome) {
+        throw new Error('Failed to retrieve session outcome');
+      }
+
+      // Navigate to reward screen with the necessary data
+      navigate('/reward', { 
+        state: { 
+          outcome: sessionOutcome,
+          session: completedSession
+        }
+      });
+    } catch (error) {
+      console.error('Error handling expired timer:', error);
+      setError('Failed to process completed session. Please restart the app.');
+      setIsLoading(false);
+    }
+  };
 
   // Load ecosystem data
   useEffect(() => {
@@ -87,6 +135,7 @@ const TimerScreen: React.FC = () => {
         setEcosystem(eco);
       } catch (error) {
         console.error('Error loading ecosystem:', error);
+        setError('Failed to load ecosystem data');
       }
     };
     loadEcosystem();
@@ -114,6 +163,10 @@ const TimerScreen: React.FC = () => {
       const completedSession = await mockDb.createSession(sessionData);
       const sessionOutcome = await mockDb.createSessionOutcome(completedSession);
 
+      if (!sessionOutcome) {
+        throw new Error('Failed to retrieve session outcome');
+      }
+
       // Navigate to reward screen
       navigate('/reward', { 
         state: { 
@@ -123,6 +176,7 @@ const TimerScreen: React.FC = () => {
       });
     } catch (error) {
       console.error('Error completing session:', error);
+      setError('Failed to process completed session');
     }
   };
 
@@ -176,6 +230,7 @@ const TimerScreen: React.FC = () => {
       navigate('/');
     } catch (error) {
       console.error('Error cancelling session:', error);
+      setError('Failed to cancel session');
     }
   };
 
@@ -205,6 +260,27 @@ const TimerScreen: React.FC = () => {
 
   // Get current session info for display
   const displayState = currentTimerState || session;
+
+  // Show loading state while initializing
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-screen items-center justify-center">
+        <div className="text-[#784E2F] text-xl">Loading session...</div>
+      </div>
+    );
+  }
+
+  // Show error state if there was a problem
+  if (error) {
+    return (
+      <div className="flex flex-col h-screen items-center justify-center p-4">
+        <div className="text-red-500 text-xl mb-4">{error}</div>
+        <Button variant="primary" onClick={() => navigate('/')}>
+          Return to Home
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen">
