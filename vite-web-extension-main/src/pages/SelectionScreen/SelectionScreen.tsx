@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/button/Button";
 import { CarouselButton } from "../../components/CarouselButton/CarouselButton";
@@ -55,6 +55,8 @@ export default function SelectionScreen() {
   const [currentBirdIndex, setCurrentBirdIndex] = useState(0);
   const [selectedAction, setSelectedAction] = useState<ActionType>("Gather");
   const [timer, setTimer] = useState(25);
+  const [error, setError] = useState<string | null>(null);
+  const errorTimeoutRef = useRef<number | null>(null);
   
   // New states for mock database integration
   const [ecosystem, setEcosystem] = useState<Ecosystem | null>(null);
@@ -69,7 +71,14 @@ export default function SelectionScreen() {
         if (result.selectionState) {
           const storedState: StoredState = result.selectionState;
           setCurrentBirdIndex(storedState.currentBirdIndex);
-          setSelectedAction(storedState.selectedAction);
+          // Validate the stored action before setting it
+          if (ecosystem && validateAction(storedState.selectedAction)) {
+            setSelectedAction(storedState.selectedAction);
+          } else if (ecosystem) {
+            // Set a valid default action if the stored one is invalid
+            const validAction = findValidDefaultAction(ecosystem);
+            setSelectedAction(validAction);
+          }
           setTimer(storedState.timer);
         }
       } catch (error) {
@@ -78,7 +87,7 @@ export default function SelectionScreen() {
     };
 
     loadStoredState();
-  }, []);
+  }, [ecosystem]); // Add ecosystem as dependency
 
   // Save state changes to storage
   useEffect(() => {
@@ -99,6 +108,20 @@ export default function SelectionScreen() {
     saveState();
   }, [currentBirdIndex, selectedAction, timer]);
 
+  // Find a valid default action based on ecosystem state
+  const findValidDefaultAction = (eco: Ecosystem): ActionType => {
+    // Default to "Gather" as it usually doesn't require resources
+    if (validateActionWithEcosystem("Gather", eco)) return "Gather";
+    
+    // Try other actions if "Gather" is somehow invalid
+    for (const action of ACTIONS) {
+      if (validateActionWithEcosystem(action, eco)) return action;
+    }
+    
+    // Fallback to "Gather" if no valid actions found (unlikely)
+    return "Gather";
+  };
+
   // Load ecosystem and species data
   useEffect(() => {
     const loadData = async () => {
@@ -108,9 +131,38 @@ export default function SelectionScreen() {
       ]);
       setEcosystem(eco);
       setUserSpecies(species);
+
+      // Set default valid action when ecosystem is loaded
+      if (eco) {
+        const validAction = findValidDefaultAction(eco);
+        setSelectedAction(validAction);
+      }
     };
     loadData();
   }, []);
+
+  // Auto-dismiss error after 3 seconds
+  useEffect(() => {
+    if (error) {
+      // Clear any existing timeout
+      if (errorTimeoutRef.current) {
+        window.clearTimeout(errorTimeoutRef.current);
+      }
+      
+      // Set new timeout
+      errorTimeoutRef.current = window.setTimeout(() => {
+        setError(null);
+        errorTimeoutRef.current = null;
+      }, 3000);
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      if (errorTimeoutRef.current) {
+        window.clearTimeout(errorTimeoutRef.current);
+      }
+    };
+  }, [error]);
 
   // Load bird images
   useEffect(() => {
@@ -136,14 +188,12 @@ export default function SelectionScreen() {
     }
   };
 
-  const validateAction = (action: ActionType): boolean => {
-    if (!ecosystem) return false;
-    
+  const validateActionWithEcosystem = (action: ActionType, eco: Ecosystem): boolean => {
     switch (action) {
       case "Hatch":
-        return ecosystem.feathers >= 1 && ecosystem.population < ecosystem.max_population;
+        return eco.feathers >= 1 && eco.population < eco.max_population;
       case "Build":
-        return ecosystem.resources >= 1;
+        return eco.resources >= 1;
       case "Gather":
         return true;
       default:
@@ -151,26 +201,88 @@ export default function SelectionScreen() {
     }
   };
 
-  const handleStartSession = () => {
-    if (!ecosystem || userSpecies.length === 0) return;
+  const validateAction = (action: ActionType): boolean => {
+    if (!ecosystem) return false;
+    return validateActionWithEcosystem(action, ecosystem);
+  };
 
-    const currentBird = userSpecies[currentBirdIndex];
-    const birdRole = BIRD_ROLES[currentBird.name];
+  const handleActionSelection = (action: ActionType) => {
+    // Clear any previous errors
+    setError(null);
     
-    const session: SessionState = {
-      selectedBird: {
-        id: currentBird.id,
-        name: currentBird.name,
-        role: birdRole.role,
-        roleIcon: birdRole.roleIcon,
-        tooltip: birdRole.tooltip,
-        image: birdImages[currentBird.name]
-      },
-      selectedAction,
-      selectedTime: timer
-    };
+    // Check if the action is valid
+    if (validateAction(action)) {
+      setSelectedAction(action);
+    } else {
+      // Show appropriate error message
+      switch (action) {
+        case "Hatch":
+          if (ecosystem?.feathers as number < 1) {
+            setError("Not enough feathers to hatch.");
+          } else if (ecosystem?.population as number >= ecosystem?.max_population as number) {
+            setError("Population limit reached.");
+          }
+          break;
+        case "Build":
+          setError("Not enough resources to build.");
+          break;
+        default:
+          setError(`Cannot perform ${action}: insufficient resources.`);
+      }
+      
+      // Don't update selectedAction for invalid actions
+      // selectedAction remains unchanged
+    }
+  };
+
+  const handleStartSession = async () => {
+    if (!ecosystem || userSpecies.length === 0) return;
     
-    navigate('/timer', { state: session });
+    // Final validation check
+    if (!validateAction(selectedAction)) {
+      setError(`Cannot start session: ${selectedAction} action is invalid with current resources.`);
+      return;
+    }
+
+    try {
+      const currentBird = userSpecies[currentBirdIndex];
+      const birdRole = BIRD_ROLES[currentBird.name];
+      
+      // Create a session first via mockDb to check for errors
+      const sessionData = {
+        user_id: "user1",
+        specie_id: currentBird.id,
+        action: selectedAction.toLowerCase(),
+        duration: timer * 60, // Convert to seconds
+        completed: false,
+        cancelled: false,
+        start_time: new Date()
+      };
+      
+      // This will throw an error if validation fails
+      await mockDb.createSession(sessionData);
+      
+      const session: SessionState = {
+        selectedBird: {
+          id: currentBird.id,
+          name: currentBird.name,
+          role: birdRole.role,
+          roleIcon: birdRole.roleIcon,
+          tooltip: birdRole.tooltip,
+          image: birdImages[currentBird.name]
+        },
+        selectedAction,
+        selectedTime: timer
+      };
+      
+      navigate('/timer', { state: session });
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unexpected error occurred.");
+      }
+    }
   };
 
   const BirdCard = () => {
@@ -213,7 +325,14 @@ export default function SelectionScreen() {
 
   return (
     <div className="relative">
-       {ecosystem && (
+      {/* Floating error message */}
+      {error && (
+        <div className="fixed top-16 left-1/2 transform -translate-x-1/2 z-50 bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded shadow-md transition-opacity duration-300 max-w-xs">
+          <p className="text-sm text-center">{error}</p>
+        </div>
+      )}
+      
+      {ecosystem && (
         <FloatingHeader
           stats={{
             nests: ecosystem.nests,
@@ -223,71 +342,71 @@ export default function SelectionScreen() {
           }}
         />
       )}
-    <div className="relative z-10">
-      <h1 className="text-center text-xl font-medium mb-2 mt-3 text-brown">
-        Select Your Bird
-      </h1>
+      <div className="relative z-10">
+        <h1 className="text-center text-xl font-medium mb-2 mt-3 text-brown">
+          Select Your Bird
+        </h1>
 
-      <div className="flex items-center justify-center gap-2 mb-2">
-        <CarouselButton 
-          direction="prev" 
-          onClick={() => setCurrentBirdIndex((prev) => (prev - 1 + userSpecies.length) % userSpecies.length)}
-        />
-        <BirdCard />
-        <CarouselButton 
-          direction="next" 
-          onClick={() => setCurrentBirdIndex((prev) => (prev + 1) % userSpecies.length)}
-        />
-      </div>
-
-      <div className="flex justify-center gap-3 mb-2">
-        {userSpecies.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrentBirdIndex(index)}
-            className={`w-3 h-3 rounded-full ${
-              currentBirdIndex === index ? "bg-yellow" : "bg-white"
-            }`}
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <CarouselButton 
+            direction="prev" 
+            onClick={() => setCurrentBirdIndex((prev) => (prev - 1 + userSpecies.length) % userSpecies.length)}
           />
-        ))}
-      </div>
-
-      <h2 className="text-center text-xl font-medium mb-2 text-brown">
-        Choose an Action
-      </h2>
-      <div className="flex justify-center gap-12 mb-4">
-        {ACTIONS.map((action) => (
-          <ActionButton
-            key={action}
-            action={action}
-            selectedAction={selectedAction}
-            onClick={() => setSelectedAction(action)}
-            isValid={validateAction(action)}
+          <BirdCard />
+          <CarouselButton 
+            direction="next" 
+            onClick={() => setCurrentBirdIndex((prev) => (prev + 1) % userSpecies.length)}
           />
-        ))}
-      </div>
+        </div>
 
-      <h2 className="text-center text-xl font-medium mb-2 text-brown">
-        Set a Timer
-      </h2>
-      <div className="flex items-center justify-center gap-3 mb-3">
-        <TimerButton type="minus" onClick={() => handleTimerAdjust(-5)} />
-        <TimerDisplay timer={timer} />
-        <TimerButton type="plus" onClick={() => handleTimerAdjust(5)} />
-      </div>
+        <div className="flex justify-center gap-3 mb-2">
+          {userSpecies.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentBirdIndex(index)}
+              className={`w-3 h-3 rounded-full ${
+                currentBirdIndex === index ? "bg-yellow" : "bg-white"
+              }`}
+            />
+          ))}
+        </div>
 
-      <div className="flex justify-center">
-        <div className="w-4/5">
-          <Button 
-            variant="primary" 
-            onClick={handleStartSession}
-            disabled={!ecosystem || userSpecies.length === 0}
-          >
-            Start Focus Session
-          </Button>
+        <h2 className="text-center text-xl font-medium mb-2 text-brown">
+          Choose an Action
+        </h2>
+        <div className="flex justify-center gap-12 mb-4">
+          {ACTIONS.map((action) => (
+            <ActionButton
+              key={action}
+              action={action}
+              selectedAction={selectedAction}
+              onClick={() => handleActionSelection(action)}
+              isValid={validateAction(action)}
+            />
+          ))}
+        </div>
+
+        <h2 className="text-center text-xl font-medium mb-2 text-brown">
+          Set a Timer
+        </h2>
+        <div className="flex items-center justify-center gap-3 mb-3">
+          <TimerButton type="minus" onClick={() => handleTimerAdjust(-5)} />
+          <TimerDisplay timer={timer} />
+          <TimerButton type="plus" onClick={() => handleTimerAdjust(5)} />
+        </div>
+
+        <div className="flex justify-center">
+          <div className="w-4/5">
+            <Button 
+              variant="primary" 
+              onClick={handleStartSession}
+              disabled={!ecosystem || userSpecies.length === 0 || !validateAction(selectedAction)}
+            >
+              Start Focus Session
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
     </div>
   );
 }
