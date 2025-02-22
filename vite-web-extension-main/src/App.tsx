@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import SelectionScreen from './pages/SelectionScreen/SelectionScreen';
 import TimerScreen from './pages/TimerScreen/TimerScreen';
 import RewardScreen from './pages/RewardScreen/RewardScreen';
+import LoginScreen from './pages/LoginScreen/LoginScreen';
 import {RewardState} from '../src/types/session-types';
 
 export default function App() {
