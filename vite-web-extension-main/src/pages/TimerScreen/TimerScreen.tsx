@@ -141,14 +141,12 @@ const TimerScreen: React.FC = () => {
     loadEcosystem();
   }, []);
 
-  // Handle timer completion
   const handleSessionComplete = async () => {
     try {
       // Clear timer state
       await chrome.storage.local.remove(['timerState']);
       setIsRunning(false);
-
-      // Create session outcome without using mockDb for timer state
+  
       const sessionData = {
         user_id: "user1",
         completed: true,
@@ -158,16 +156,23 @@ const TimerScreen: React.FC = () => {
         action: currentTimerState?.selectedAction,
         start_time: new Date(currentTimerState?.startTime || 0)
       };
-
-      // Only use mockDb for the final outcome
+  
       const completedSession = await mockDb.createSession(sessionData);
       const sessionOutcome = await mockDb.createSessionOutcome(completedSession);
-
+  
       if (!sessionOutcome) {
         throw new Error('Failed to retrieve session outcome');
       }
-
-      // Navigate to reward screen
+  
+      // Save reward state before navigation
+      const rewardState: RewardState = {
+        outcome: sessionOutcome,
+        session: completedSession,
+        viewed: false
+      };
+      
+      await chrome.storage.local.set({ rewardState });
+  
       navigate('/reward', { 
         state: { 
           outcome: sessionOutcome,

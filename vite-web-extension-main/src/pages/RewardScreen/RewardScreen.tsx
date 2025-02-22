@@ -14,32 +14,75 @@ interface LocationState {
   };
 }
 
+interface CountState {
+  leaf: number;
+  feather: number;
+  house: number;
+  bird: number;
+}
+
 export default function RewardScreen() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { outcome, session } = location.state as LocationState;
-  
+  const [rewardData, setRewardData] = useState<LocationState | null>(null);
   const [ecosystem, setEcosystem] = useState<Ecosystem | null>(null);
-  const [counts, setCounts] = useState({
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [counts, setCounts] = useState<CountState>({
     leaf: 0,
     feather: 0,
     house: 0,
     bird: 0,
   });
 
+  // Load reward data from storage if not provided via location
+  useEffect(() => {
+    const loadRewardData = async () => {
+      try {
+        if (location.state) {
+          setRewardData(location.state as LocationState);
+        } else {
+          const storage = await chrome.storage.local.get(['rewardState']);
+          const savedReward = storage.rewardState;
+          if (savedReward) {
+            setRewardData({
+              outcome: savedReward.outcome,
+              session: savedReward.session
+            });
+          } else {
+            setError("No reward data found");
+          }
+        }
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error loading reward data:', error);
+        setError("Failed to load reward data");
+        setIsLoading(false);
+      }
+    };
+    
+    loadRewardData();
+  }, [location.state]);
+
   // Load initial ecosystem state
   useEffect(() => {
     const loadEcosystem = async () => {
-      const eco = await mockDb.getEcosystem("user1");
-      setEcosystem(eco);
+      try {
+        const eco = await mockDb.getEcosystem("user1");
+        setEcosystem(eco);
+      } catch (error) {
+        console.error('Error loading ecosystem:', error);
+        setError("Failed to load ecosystem data");
+      }
     };
     loadEcosystem();
   }, []);
 
   // Calculate changes based on session outcome
   const calculateChanges = () => {
-    if (!ecosystem || !outcome) return {};
+    if (!ecosystem || !rewardData?.outcome) return {};
     
+    const outcome = rewardData.outcome;
     return {
       leaf: {
         value: ecosystem.resources + outcome.resources_gained - outcome.resources_spent,
@@ -65,11 +108,11 @@ export default function RewardScreen() {
     house: "nests created",
     feather: "feathers for hatching eggs",
     bird: "bird population and max bird population",
-  };
+  } as const;
 
   // Animate counts
   useEffect(() => {
-    if (!ecosystem) return;
+    if (!ecosystem || !rewardData) return;
 
     const changes = calculateChanges();
     const duration = 1500;
@@ -90,7 +133,7 @@ export default function RewardScreen() {
           Math.ceil((changes.house?.value || 0) / steps * step),
           changes.house?.value || 0
         ),
-        bird: ecosystem.population + outcome.population_increase,
+        bird: ecosystem.population + rewardData.outcome.population_increase,
       }));
     };
 
@@ -102,11 +145,45 @@ export default function RewardScreen() {
     }, interval);
 
     return () => clearInterval(timer);
-  }, [ecosystem, outcome]);
+  }, [ecosystem, rewardData]);
 
-  const handleStartNewSession = () => {
-    navigate('/');
+  const handleStartNewSession = async () => {
+    try {
+      // Mark rewards as viewed and clear reward state
+      await chrome.storage.local.remove(['rewardState']);
+      navigate('/');
+    } catch (error) {
+      console.error('Error clearing reward state:', error);
+      setError("Failed to start new session");
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center text-[#784E2F] text-xl">
+        Loading...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col h-screen items-center justify-center p-4">
+        <div className="text-red-500 text-xl mb-4">{error}</div>
+        <Button variant="primary" onClick={() => navigate('/')}>
+          Return to Home
+        </Button>
+      </div>
+    );
+  }
+
+  if (!rewardData || !ecosystem) {
+    return (
+      <div className="flex h-screen items-center justify-center text-[#784E2F] text-xl">
+        No reward data available
+      </div>
+    );
+  }
 
   const changes = calculateChanges();
 
@@ -130,25 +207,25 @@ export default function RewardScreen() {
               icon: <Leaf size={20} />,
               value: counts.leaf,
               change: changes.leaf?.change,
-              type: "leaf",
+              type: "leaf" as keyof typeof descriptions,
             },
             {
               icon: <Feather size={20} />,
               value: counts.feather,
               change: changes.feather?.change,
-              type: "feather",
+              type: "feather" as keyof typeof descriptions,
             },
             {
               icon: <Home size={20} />,
               value: counts.house,
               change: changes.house?.change,
-              type: "house",
+              type: "house" as keyof typeof descriptions,
             },
             {
               icon: <Bird size={20} />,
               value: counts.bird,
               change: changes.bird?.change,
-              type: "bird",
+              type: "bird" as keyof typeof descriptions,
             },
           ].map((item, i) => (
             <div key={i} className="flex items-center gap-2">
@@ -187,7 +264,7 @@ export default function RewardScreen() {
 
         <div className="flex items-center gap-2 text-sm text-[#784E2F]">
           <span>Enjoying Nestify?</span>
-          <a href="#" className="text-[#784E2F] hover:underline">
+          <a href="https://buymeacoffee.com/nestify" target="_blank" className="text-[#784E2F] hover:underline">
             Make a small donation
           </a>
           <Heart size={16} className="text-[#784E2F]" />

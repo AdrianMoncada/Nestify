@@ -3,40 +3,41 @@ import { useEffect, useState } from 'react';
 import SelectionScreen from './pages/SelectionScreen/SelectionScreen';
 import TimerScreen from './pages/TimerScreen/TimerScreen';
 import RewardScreen from './pages/RewardScreen/RewardScreen';
+import {RewardState} from '../src/types/session-types';
 
 export default function App() {
   const [initialRoute, setInitialRoute] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const checkTimerState = async () => {
+    const checkAppState = async () => {
       try {
-        const storage = await chrome.storage.local.get(['timerState']);
-        const savedTimer = storage.timerState;
+        // Check for unviewed rewards first
+        const rewardStorage = await chrome.storage.local.get(['rewardState']);
+        const savedReward = rewardStorage.rewardState as RewardState;
 
-        if (savedTimer) {
-          const currentTime = new Date().getTime();
-          const elapsedSeconds = Math.floor((currentTime - savedTimer.startTime) / 1000);
-          const remainingSeconds = savedTimer.totalDuration - elapsedSeconds;
-
-          // Siempre redirigimos a TimerScreen si hay un timer guardado
-          // TimerScreen se encargará de verificar si ha expirado y
-          // redirigir a RewardScreen cuando sea necesario
-          setInitialRoute('/timer');
-          
-          // No eliminar el timerState aquí - dejamos que TimerScreen lo maneje
+        if (savedReward && !savedReward.viewed) {
+          setInitialRoute('/reward');
         } else {
-          setInitialRoute('/');
+          // If no unviewed rewards, check for active timer
+          const timerStorage = await chrome.storage.local.get(['timerState']);
+          const savedTimer = timerStorage.timerState;
+
+          if (savedTimer) {
+            setInitialRoute('/timer');
+          } else {
+            setInitialRoute('/');
+          }
         }
         setIsLoading(false);
       } catch (error) {
-        console.error('Error checking timer state:', error);
+        console.error('Error checking app state:', error);
         setInitialRoute('/');
         setIsLoading(false);
       }
     };
 
-    checkTimerState();
+    checkAppState();
   }, []);
 
   if (isLoading) {
@@ -50,7 +51,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<SelectionScreen />} />
         <Route path="/timer" element={<TimerScreen />} />
-        <Route path="/reward" element={<RewardScreen/>} />
+        <Route path="/reward" element={<RewardScreen />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </MemoryRouter>

@@ -10,6 +10,7 @@ import { Tooltip } from "../../components/Tooltip/tooltip-component";
 import { SessionState } from "../../types/session-types";
 import { mockDb, Species, Ecosystem } from "../../mockDatabase/mock-database";
 import { FloatingHeader } from "../../components/FloatingHeader/floating-header";
+import { ErrorAlert} from "../../components/ErrorAlert/ErrorAlert";
 
 // Bird role configuration
 const BIRD_ROLES = {
@@ -140,29 +141,6 @@ export default function SelectionScreen() {
     };
     loadData();
   }, []);
-
-  // Auto-dismiss error after 3 seconds
-  useEffect(() => {
-    if (error) {
-      // Clear any existing timeout
-      if (errorTimeoutRef.current) {
-        window.clearTimeout(errorTimeoutRef.current);
-      }
-      
-      // Set new timeout
-      errorTimeoutRef.current = window.setTimeout(() => {
-        setError(null);
-        errorTimeoutRef.current = null;
-      }, 3000);
-    }
-    
-    // Cleanup on unmount
-    return () => {
-      if (errorTimeoutRef.current) {
-        window.clearTimeout(errorTimeoutRef.current);
-      }
-    };
-  }, [error]);
 
   // Load bird images
   useEffect(() => {
@@ -327,9 +305,11 @@ export default function SelectionScreen() {
     <div className="relative">
       {/* Floating error message */}
       {error && (
-        <div className="fixed top-16 left-1/2 transform -translate-x-1/2 z-50 bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded shadow-md transition-opacity duration-300 max-w-xs">
-          <p className="text-sm text-center">{error}</p>
-        </div>
+        <ErrorAlert 
+          message={error} 
+          duration={3000} 
+          onClose={() => setError(null)}
+        />
       )}
       
       {ecosystem && (
