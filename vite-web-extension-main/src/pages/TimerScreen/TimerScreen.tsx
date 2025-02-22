@@ -85,13 +85,12 @@ const TimerScreen: React.FC = () => {
     initializeTimer();
   }, []);
 
-  // Handle expired timer case specifically
   const handleExpiredTimer = async (savedTimer: TimerStorage) => {
     try {
       // Clear timer state
       await chrome.storage.local.remove(['timerState']);
       setIsRunning(false);
-
+  
       // Create session data from saved timer state
       const sessionData = {
         user_id: "user1",
@@ -102,17 +101,27 @@ const TimerScreen: React.FC = () => {
         action: savedTimer.selectedAction,
         start_time: new Date(savedTimer.startTime)
       };
-
+  
       // First create the session
       const completedSession = await mockDb.createSession(sessionData);
       
       // Then get the session outcome
       const sessionOutcome = await mockDb.createSessionOutcome(completedSession);
-
+  
       if (!sessionOutcome) {
         throw new Error('Failed to retrieve session outcome');
       }
-
+  
+      // Save reward state before navigation
+      const rewardState = {
+        outcome: sessionOutcome,
+        session: completedSession,
+        viewed: false
+      };
+  
+      // Almacenar el estado de recompensa antes de navegar
+      await chrome.storage.local.set({ rewardState });
+  
       // Navigate to reward screen with the necessary data
       navigate('/reward', { 
         state: { 
