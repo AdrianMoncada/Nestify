@@ -4,6 +4,7 @@ import { crx, ManifestV3Export } from '@crxjs/vite-plugin';
 import { defineConfig, BuildOptions } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths'
 import { stripDevIcons, crxI18n } from './custom-vite-plugins';
+import { viteStaticCopy } from 'vite-plugin-static-copy';
 import manifest from './manifest.json';
 import devManifest from './manifest.dev.json';
 import pkg from './package.json';
@@ -34,7 +35,15 @@ export default defineConfig({
     tsconfigPaths(),
     react(),
     stripDevIcons(isDev),
-    crxI18n({ localize, src: './src/locales' })
+    crxI18n({ localize, src: './src/locales' }),
+    viteStaticCopy({
+      targets: [
+        {
+          src: 'src/pages/AuthSucessPage/auth-success.html',
+          dest: 'src/pages/AuthSucessPage'
+        }
+      ]
+    })
   ],
   publicDir: resolve(__dirname, 'public'),
 });
