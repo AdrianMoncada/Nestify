@@ -19,11 +19,17 @@
   },
   "permissions": [
     "activeTab",
-    "storage"
+    "storage",
+    "identity",
+    "tabs"
   ],
-  "background": {
-  "service_worker": "background.js"
-},
+  "oauth2": {
+    "client_id": "651949198469-3sea82uhvhqdrsnve229vub4ns43qoii.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/userinfo.profile"
+    ]
+  },
   "content_scripts": [
     {
       "matches": [
@@ -47,7 +53,11 @@
         "icon-128.png",
         "icon-32.png"
       ],
-      "matches": []
+      "matches": [
+        "https://*/*",
+        "http://*/*"
+      ]
     }
-  ]
+  ],
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqt6RqZQied0BeV3am7AeRJp66wAapun/CHAx1j4OglC2qbYHIyKGv1FeoEvH65yJsq1pEeLV9Sb4kXcI6SDqqg7ncp6FTqN9W1ffx3YHPZiw0wmfsRoWLiLGiC+AC5ihsxPb1dkeRifaaGWjuuOq5OY9n3z2mNlFWRHHFm+gQD/EDpVKfphglYAMhihAHuMsUQsin/1LeS7PAtKE338xIkuyBJ3M/bU9tMRUnzN2S41p2xxOSIBtsVHc0+/21hOnYFLFO66Z4Bc7OwnrHDVDa4juWe3D+2FLMZvCcvXndvy0WrDDKQW8hpxo5wu+HfDk5+pVPxfHP0SNGEVGEPcLswIDAQAB"
 }

@@ -4,36 +4,57 @@ import SelectionScreen from './pages/SelectionScreen/SelectionScreen';
 import TimerScreen from './pages/TimerScreen/TimerScreen';
 import RewardScreen from './pages/RewardScreen/RewardScreen';
 import LoginScreen from './pages/LoginScreen/LoginScreen';
-import {RewardState} from '../src/types/session-types';
+import { RewardState } from '../src/types/session-types';
+import { supabase, getUserData } from './lib/supabase';
 
 export default function App() {
   const [initialRoute, setInitialRoute] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     const checkAppState = async () => {
       try {
-        // Check for unviewed rewards first
-        const rewardStorage = await chrome.storage.local.get(['rewardState']);
-        const savedReward = rewardStorage.rewardState as RewardState;
+        // Check authentication first
+        const { session } = await chrome.storage.local.get('session');
+        if (session) {
+          const { error: supaAuthError } = await supabase.auth.setSession(session);
+          if (!supaAuthError) {
+            setIsAuthenticated(true);
+            
+            // Get and log user data
+            const userData = await getUserData();
+            if (userData) {
+              console.log('User data:', userData);
+            }
 
-        if (savedReward && !savedReward.viewed) {
-          setInitialRoute('/reward');
-        } else {
-          // If no unviewed rewards, check for active timer
-          const timerStorage = await chrome.storage.local.get(['timerState']);
-          const savedTimer = timerStorage.timerState;
+            // Check for unviewed rewards
+            const rewardStorage = await chrome.storage.local.get(['rewardState']);
+            const savedReward = rewardStorage.rewardState as RewardState;
 
-          if (savedTimer) {
-            setInitialRoute('/timer');
+            if (savedReward && !savedReward.viewed) {
+              setInitialRoute('/reward');
+            } else {
+              // If no unviewed rewards, check for active timer
+              const timerStorage = await chrome.storage.local.get(['timerState']);
+              const savedTimer = timerStorage.timerState;
+
+              if (savedTimer) {
+                setInitialRoute('/timer');
+              } else {
+                setInitialRoute('/');
+              }
+            }
           } else {
-            setInitialRoute('/');
+            setInitialRoute('/login');
           }
+        } else {
+          setInitialRoute('/login');
         }
         setIsLoading(false);
       } catch (error) {
         console.error('Error checking app state:', error);
-        setInitialRoute('/');
+        setInitialRoute('/login');
         setIsLoading(false);
       }
     };
@@ -50,9 +71,19 @@ export default function App() {
   return (
     <MemoryRouter initialEntries={[initialRoute]}>
       <Routes>
-        <Route path="/" element={<SelectionScreen />} />
-        <Route path="/timer" element={<TimerScreen />} />
-        <Route path="/reward" element={<RewardScreen />} />
+        <Route path="/login" element={<LoginScreen />} />
+        <Route
+          path="/"
+          element={isAuthenticated ? <SelectionScreen /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/timer"
+          element={isAuthenticated ? <TimerScreen /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/reward"
+          element={isAuthenticated ? <RewardScreen /> : <Navigate to="/login" replace />}
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </MemoryRouter>
