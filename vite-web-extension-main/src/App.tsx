@@ -26,7 +26,20 @@ export default function App() {
           if (!appState.isAuthenticated) {
             setInitialRoute('/login');
           } else if (appState.hasUnviewedReward) {
-            setInitialRoute('/reward');
+            // Double-check reward data actually exists
+            const { rewardState } = await chrome.storage.local.get(['rewardState']);
+            if (rewardState && rewardState.outcome && rewardState.session) {
+              console.log("Verified reward data exists, navigating to /reward");
+              setInitialRoute('/reward');
+            } else {
+              console.log("Cached state indicated reward but no data found");
+              setInitialRoute('/');
+              // Update cached state to avoid future false positives
+              await chrome.runtime.sendMessage({
+                type: 'UPDATE_APP_STATE',
+                state: {...appState, hasUnviewedReward: false}
+              });
+            }
           } else if (appState.hasActiveTimer) {
             setInitialRoute('/timer');
           } else {
@@ -48,13 +61,34 @@ export default function App() {
                 chrome.storage.local.get(['timerState'])
               ]);
               
+              // Verificar explícitamente que rewardState existe y contiene outcome
+              // Antes de determinar la ruta
+              let hasUnviewedReward = false;
+              if (rewardState && 
+                rewardState.rewardState && 
+                rewardState.rewardState.outcome &&
+                rewardState.rewardState.session &&
+                rewardState.rewardState.reward && 
+                rewardState.rewardState.viewed === false) {
+                hasUnviewedReward = true;
+              }
+              
               // Determinar la ruta inicial basada en los estados
-              if (rewardState?.rewardState && !rewardState.rewardState.viewed) {
+              if (hasUnviewedReward) {
+                console.log("Hay una recompensa sin ver, navegando a /reward");
                 setInitialRoute('/reward');
               } else if (timerState?.timerState) {
+                console.log("Hay un timer activo, navegando a /timer");
                 setInitialRoute('/timer');
               } else {
+                console.log("No hay recompensas ni timers, navegando a /");
                 setInitialRoute('/');
+                
+                // Limpiamos cualquier estado de recompensa inválido
+                if (rewardState && rewardState.rewardState) {
+                  console.log("Limpiando estado de recompensa inválido");
+                  await chrome.storage.local.remove(['rewardState']);
+                }
               }
               
               // Actualizar el estado en el worker
@@ -62,7 +96,7 @@ export default function App() {
                 type: 'UPDATE_APP_STATE',
                 state: {
                   isAuthenticated: true,
-                  hasUnviewedReward: rewardState?.rewardState?.viewed === false,
+                  hasUnviewedReward: hasUnviewedReward,
                   hasActiveTimer: !!timerState?.timerState,
                   lastCheck: Date.now()
                 }

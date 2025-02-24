@@ -102,15 +102,28 @@ async function checkAuthAndState() {
         chrome.storage.local.get(['timerState'])
       ]);
       
+      // Determinar si hay recompensa real con datos válidos
+      const hasValidReward = rewardState?.rewardState && 
+                       rewardState.rewardState.reward && 
+                       rewardState.rewardState.outcome &&
+                       rewardState.rewardState.session &&
+                       rewardState.rewardState.viewed === false;
+      
       // Guardar el estado actual
       await chrome.storage.local.set({
         appState: {
           isAuthenticated: true,
-          hasUnviewedReward: rewardState?.rewardState?.viewed === false,
+          hasUnviewedReward: hasValidReward,
           hasActiveTimer: !!timerState?.timerState,
           lastCheck: Date.now()
         }
       });
+      
+      // Si no hay recompensa válida, limpiar el estado de recompensa para evitar errores
+      if (!hasValidReward && rewardState?.rewardState) {
+        await chrome.storage.local.remove(['rewardState']);
+        console.log('Estado de recompensa inválido eliminado');
+      }
     }
   }
 }

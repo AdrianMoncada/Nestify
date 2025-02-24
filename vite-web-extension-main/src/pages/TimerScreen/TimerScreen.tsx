@@ -11,6 +11,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { mockDb, Ecosystem, Session } from "../../mockDatabase/mock-database";
 import { FloatingHeader } from "../../components/FloatingHeader/floating-header";
 
+
 interface TimerStorage {
   startTime: number;
   totalDuration: number;
@@ -20,7 +21,14 @@ interface TimerStorage {
   isRunning: boolean;
 }
 
+interface RewardState {
+  outcome: any;
+  session: Session;
+  viewed: boolean;
+}
+
 const TimerScreen: React.FC = () => {
+  console.log("ingresa a timerscreen!")
   const navigate = useNavigate();
   const { state } = useLocation();
   const session: SessionState = state;
@@ -34,6 +42,10 @@ const TimerScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { setCloudsMoving } = useCloudAnimation();
+
+  // Default values to prevent undefined errors
+  const DEFAULT_ACTION = "Focus";
+  const DEFAULT_BIRD = { id: "default", name: "Bird", tooltip: "Default Bird" };
 
   // Initialize or restore timer state
   useEffect(() => {
@@ -49,6 +61,10 @@ const TimerScreen: React.FC = () => {
           const elapsedSeconds = Math.floor((currentTime - savedTimer.startTime) / 1000);
           const remainingSeconds = savedTimer.totalDuration - elapsedSeconds;
 
+          // Ensure savedTimer has valid action and bird
+          if (!savedTimer.selectedAction) savedTimer.selectedAction = DEFAULT_ACTION;
+          if (!savedTimer.selectedBird) savedTimer.selectedBird = DEFAULT_BIRD;
+
           if (remainingSeconds <= 0) {
             // Timer has expired while extension was closed
             await handleExpiredTimer(savedTimer);
@@ -57,14 +73,25 @@ const TimerScreen: React.FC = () => {
             setTimeLeft(remainingSeconds);
             setIsRunning(savedTimer.isRunning);
             setCurrentTimerState(savedTimer);
+            
+            // Update app state to ensure consistency
+            await chrome.runtime.sendMessage({ 
+              type: 'UPDATE_APP_STATE',
+              state: {
+                isAuthenticated: true,
+                hasUnviewedReward: false,
+                hasActiveTimer: true,
+                lastCheck: Date.now()
+              }
+            });
           }
         } else if (session) {
           // Initialize new timer
           const newTimerState: TimerStorage = {
             startTime: new Date().getTime(),
             totalDuration: session.selectedTime * 1,
-            selectedBird: session.selectedBird,
-            selectedAction: session.selectedAction,
+            selectedBird: session.selectedBird || DEFAULT_BIRD,
+            selectedAction: session.selectedAction || DEFAULT_ACTION,
             selectedTime: session.selectedTime,
             isRunning: true
           };
@@ -73,6 +100,21 @@ const TimerScreen: React.FC = () => {
           setTimeLeft(newTimerState.totalDuration);
           setCurrentTimerState(newTimerState);
           setIsRunning(true);
+          
+          // Update app state
+          await chrome.runtime.sendMessage({ 
+            type: 'UPDATE_APP_STATE',
+            state: {
+              isAuthenticated: true,
+              hasUnviewedReward: false,
+              hasActiveTimer: true,
+              lastCheck: Date.now()
+            }
+          });
+        } else {
+          // No timer state and no session - redirect to home
+          navigate('/');
+          return;
         }
         setIsLoading(false);
       } catch (error) {
@@ -97,8 +139,8 @@ const TimerScreen: React.FC = () => {
         completed: true,
         cancelled: false,
         duration: savedTimer.selectedTime,
-        specie_id: savedTimer.selectedBird?.id,
-        action: savedTimer.selectedAction,
+        specie_id: savedTimer.selectedBird?.id || 'default',
+        action: savedTimer.selectedAction || DEFAULT_ACTION,
         start_time: new Date(savedTimer.startTime)
       };
   
@@ -121,6 +163,17 @@ const TimerScreen: React.FC = () => {
   
       // Almacenar el estado de recompensa antes de navegar
       await chrome.storage.local.set({ rewardState });
+      
+      // Update app state
+      await chrome.runtime.sendMessage({ 
+        type: 'UPDATE_APP_STATE',
+        state: {
+          isAuthenticated: true,
+          hasUnviewedReward: true,
+          hasActiveTimer: false,
+          lastCheck: Date.now()
+        }
+      });
   
       // Navigate to reward screen with the necessary data
       navigate('/reward', { 
@@ -161,8 +214,8 @@ const TimerScreen: React.FC = () => {
         completed: true,
         cancelled: false,
         duration: currentTimerState?.selectedTime || 0,
-        specie_id: currentTimerState?.selectedBird?.id,
-        action: currentTimerState?.selectedAction,
+        specie_id: currentTimerState?.selectedBird?.id || 'default',
+        action: currentTimerState?.selectedAction || DEFAULT_ACTION,
         start_time: new Date(currentTimerState?.startTime || 0)
       };
   
@@ -181,6 +234,17 @@ const TimerScreen: React.FC = () => {
       };
       
       await chrome.storage.local.set({ rewardState });
+      
+      // Update app state
+      await chrome.runtime.sendMessage({ 
+        type: 'UPDATE_APP_STATE',
+        state: {
+          isAuthenticated: true,
+          hasUnviewedReward: true,
+          hasActiveTimer: false,
+          lastCheck: Date.now()
+        }
+      });
   
       navigate('/reward', { 
         state: { 
@@ -223,19 +287,30 @@ const TimerScreen: React.FC = () => {
       // Clear timer state
       await chrome.storage.local.remove(['timerState']);
       
-      // Create cancelled session record
+      // Create cancelled session record with safe defaults
       const sessionData = {
         user_id: "user1",
         completed: false,
         cancelled: true,
         duration: currentTimerState?.selectedTime || 0,
-        specie_id: currentTimerState?.selectedBird?.id,
-        action: currentTimerState?.selectedAction,
+        specie_id: currentTimerState?.selectedBird?.id || 'default',
+        action: currentTimerState?.selectedAction || DEFAULT_ACTION,
         start_time: new Date(currentTimerState?.startTime || 0)
       };
 
       // Only use mockDb for the final record
       await mockDb.createSession(sessionData);
+      
+      // Update app state
+      await chrome.runtime.sendMessage({ 
+        type: 'UPDATE_APP_STATE',
+        state: {
+          isAuthenticated: true,
+          hasUnviewedReward: false,
+          hasActiveTimer: false,
+          lastCheck: Date.now()
+        }
+      });
       
       setIsRunning(false);
       setShowModal(false);
@@ -250,7 +325,7 @@ const TimerScreen: React.FC = () => {
 
   // Render the appropriate animation
   const renderAnimation = () => {
-    const action = currentTimerState?.selectedAction || session?.selectedAction;
+    const action = currentTimerState?.selectedAction || session?.selectedAction || DEFAULT_ACTION;
     
     switch (action) {
       case 'Hatch':
@@ -272,8 +347,12 @@ const TimerScreen: React.FC = () => {
     setShowRain(true);
   };
 
-  // Get current session info for display
-  const displayState = currentTimerState || session;
+  // Get current session info for display with safe defaults
+  const displayState = currentTimerState || session || {
+    selectedBird: DEFAULT_BIRD,
+    selectedAction: DEFAULT_ACTION,
+    selectedTime: 0
+  };
 
   // Show loading state while initializing
   if (isLoading) {

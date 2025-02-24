@@ -6,6 +6,8 @@ import { Button } from "../../components/button/Button";
 import { Tooltip } from "../../components/Tooltip/tooltip-component";
 import { SessionOutcome, Ecosystem, mockDb } from "../../mockDatabase/mock-database";
 
+
+
 interface LocationState {
   outcome: SessionOutcome;
   session: {
@@ -22,6 +24,7 @@ interface CountState {
 }
 
 export default function RewardScreen() {
+  console.log("ingresa a rewardscreen!")
   const navigate = useNavigate();
   const location = useLocation();
   const [rewardData, setRewardData] = useState<LocationState | null>(null);
@@ -41,19 +44,27 @@ export default function RewardScreen() {
       try {
         if (location.state) {
           setRewardData(location.state as LocationState);
+          setIsLoading(false);
         } else {
           const storage = await chrome.storage.local.get(['rewardState']);
-          const savedReward = storage.rewardState;
-          if (savedReward) {
+          console.log("RewardScreen - Estado cargado:", storage.rewardState);
+          
+          // Verificación más estricta
+          if (storage.rewardState && 
+              storage.rewardState.outcome && 
+              storage.rewardState.session) {
             setRewardData({
-              outcome: savedReward.outcome,
-              session: savedReward.session
+              outcome: storage.rewardState.outcome,
+              session: storage.rewardState.session
             });
+            setIsLoading(false);
           } else {
-            setError("No reward data found");
+            console.error("RewardScreen - Datos de recompensa inválidos:", storage);
+            // Limpiar datos inválidos y redirigir
+            await chrome.storage.local.remove(['rewardState']);
+            navigate('/', { replace: true });
           }
         }
-        setIsLoading(false);
       } catch (error) {
         console.error('Error loading reward data:', error);
         setError("Failed to load reward data");
@@ -62,7 +73,7 @@ export default function RewardScreen() {
     };
     
     loadRewardData();
-  }, [location.state]);
+  }, [location.state, navigate]);
 
   // Load initial ecosystem state
   useEffect(() => {
@@ -179,8 +190,11 @@ export default function RewardScreen() {
 
   if (!rewardData || !ecosystem) {
     return (
-      <div className="flex h-screen items-center justify-center text-[#784E2F] text-xl">
-        No reward data available
+      <div className="flex flex-col h-screen items-center justify-center p-4">
+        <div className="text-gray-500 text-xl mb-4">Loading ecosystem data...</div>
+        <Button variant="primary" onClick={() => navigate('/')}>
+          Return to Home
+        </Button>
       </div>
     );
   }
