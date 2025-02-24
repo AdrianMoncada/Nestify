@@ -85,3 +85,46 @@ function parseUrlHash(url: string) {
   );
   return hashMap;
 }
+
+chrome.runtime.onInstalled.addListener(() => {
+  checkAuthAndState();
+});
+
+async function checkAuthAndState() {
+  const { session } = await chrome.storage.local.get('session');
+  if (session) {
+    // Verificar sesión con Supabase
+    const { error } = await supabase.auth.setSession(session);
+    if (!error) {
+      // Verificar estados en paralelo
+      const [rewardState, timerState] = await Promise.all([
+        chrome.storage.local.get(['rewardState']),
+        chrome.storage.local.get(['timerState'])
+      ]);
+      
+      // Guardar el estado actual
+      await chrome.storage.local.set({
+        appState: {
+          isAuthenticated: true,
+          hasUnviewedReward: rewardState?.rewardState?.viewed === false,
+          hasActiveTimer: !!timerState?.timerState,
+          lastCheck: Date.now()
+        }
+      });
+    }
+  }
+}
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'GET_APP_STATE') {
+    chrome.storage.local.get('appState').then(sendResponse);
+    return true;
+  }
+  
+  if (message.type === 'UPDATE_APP_STATE') {
+    chrome.storage.local.set({ appState: message.state }).then(() => {
+      sendResponse({ success: true });
+    });
+    return true;
+  }
+});
