@@ -56,7 +56,15 @@ async function finishUserOAuth(url: string) {
         .eq('user_id', user.id)
         .single();
       
-      console.log('Retrieved ecosystem data:', ecosystem);
+        if (error) {
+          console.error('Error retrieving ecosystem:', error);
+        } else {
+          console.log('Retrieved ecosystem data:', ecosystem);
+      
+          // Guardar el ecosistema en el almacenamiento local
+          chrome.storage.local.set({ ecosystem });
+          console.log('Ecosystem saved to chrome.storage.local');
+        }
     }
 
     // Verificar que la sesión se guardó correctamente

@@ -8,9 +8,10 @@ import { TimerButton } from "../../components/TimerButton/TimerButton";
 import { Eye, Backpack, Wind, HousePlus } from 'lucide-react';
 import { Tooltip } from "../../components/Tooltip/tooltip-component";
 import { SessionState } from "../../types/session-types";
-import { mockDb, Species, Ecosystem } from "../../mockDatabase/mock-database";
+import { Species, Ecosystem } from "../../mockDatabase/mock-database";
 import { FloatingHeader } from "../../components/FloatingHeader/floating-header";
 import { ErrorAlert} from "../../components/ErrorAlert/ErrorAlert";
+import { backendService } from "../../services/backend-service";
 
 // Bird role configuration
 const BIRD_ROLES = {
@@ -57,12 +58,45 @@ export default function SelectionScreen() {
   const [selectedAction, setSelectedAction] = useState<ActionType>("Gather");
   const [timer, setTimer] = useState(25);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const errorTimeoutRef = useRef<number | null>(null);
   
   // New states for mock database integration
   const [ecosystem, setEcosystem] = useState<Ecosystem | null>(null);
   const [userSpecies, setUserSpecies] = useState<Species[]>([]);
   const [birdImages, setBirdImages] = useState<Record<string, string>>({});
+
+  // Load ecosystem from local storage and user species
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        // Get ecosystem from local storage first
+        const { ecosystem: storedEcosystem } = await chrome.storage.local.get(['ecosystem']);
+        
+        if (storedEcosystem) {
+          setEcosystem(storedEcosystem);
+        } else {
+          setError("Ecosystem data not found in local storage");
+        }
+        
+        // Get user species data
+        const species = await backendService.getUserSpecies("user1");
+        setUserSpecies(species);
+        
+      } catch (error) {
+        if (error instanceof Error) {
+          setError(error.message);
+        } else {
+          setError("Error loading data");
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadData();
+  }, []);
 
   // Load stored state on initial render
   useEffect(() => {
@@ -111,36 +145,16 @@ export default function SelectionScreen() {
 
   // Find a valid default action based on ecosystem state
   const findValidDefaultAction = (eco: Ecosystem): ActionType => {
-    // Default to "Gather" as it usually doesn't require resources
-    if (validateActionWithEcosystem("Gather", eco)) return "Gather";
-    
-    // Try other actions if "Gather" is somehow invalid
-    for (const action of ACTIONS) {
-      if (validateActionWithEcosystem(action, eco)) return action;
-    }
-    
-    // Fallback to "Gather" if no valid actions found (unlikely)
-    return "Gather";
+    return backendService.findValidDefaultAction(eco, ACTIONS) as ActionType;
   };
 
-  // Load ecosystem and species data
+  // Set default valid action when ecosystem is loaded
   useEffect(() => {
-    const loadData = async () => {
-      const [eco, species] = await Promise.all([
-        mockDb.getEcosystem("user1"),
-        mockDb.getUserSpecies("user1")
-      ]);
-      setEcosystem(eco);
-      setUserSpecies(species);
-
-      // Set default valid action when ecosystem is loaded
-      if (eco) {
-        const validAction = findValidDefaultAction(eco);
-        setSelectedAction(validAction);
-      }
-    };
-    loadData();
-  }, []);
+    if (ecosystem) {
+      const validAction = findValidDefaultAction(ecosystem);
+      setSelectedAction(validAction);
+    }
+  }, [ecosystem]);
 
   // Load bird images
   useEffect(() => {
@@ -167,16 +181,7 @@ export default function SelectionScreen() {
   };
 
   const validateActionWithEcosystem = (action: ActionType, eco: Ecosystem): boolean => {
-    switch (action) {
-      case "Hatch":
-        return eco.feathers >= 1 && eco.population < eco.max_population;
-      case "Build":
-        return eco.resources >= 1;
-      case "Gather":
-        return true;
-      default:
-        return false;
-    }
+    return backendService.validateAction(action, eco);
   };
 
   const validateAction = (action: ActionType): boolean => {
@@ -226,7 +231,7 @@ export default function SelectionScreen() {
       const currentBird = userSpecies[currentBirdIndex];
       const birdRole = BIRD_ROLES[currentBird.name];
       
-      // Create a session first via mockDb to check for errors
+      // Create a session via backendService
       const sessionData = {
         user_id: "user1",
         specie_id: currentBird.id,
@@ -238,7 +243,7 @@ export default function SelectionScreen() {
       };
       
       // This will throw an error if validation fails
-      await mockDb.createSession(sessionData);
+      await backendService.createSession(sessionData);
       
       const session: SessionState = {
         selectedBird: {
@@ -300,6 +305,27 @@ export default function SelectionScreen() {
       </div>
     );
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center text-[#784E2F] text-xl">
+        Loading...
+      </div>
+    );
+  }
+
+  if (!ecosystem) {
+    return (
+      <div className="flex h-screen items-center justify-center text-[#784E2F] text-xl">
+        <div className="text-center p-4">
+          <p className="mb-2">Error: Ecosystem data not available.</p>
+          <Button variant="primary" onClick={() => window.location.reload()}>
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative">

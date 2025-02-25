@@ -113,7 +113,7 @@ class MockDatabase {
       population: 8,
       max_population: 10,
       feathers: 1,
-      resources: 0
+      resources: 1
     }
   ];
 
