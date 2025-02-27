@@ -1,4 +1,4 @@
-import { mockDb, Species, Ecosystem } from "../mockDatabase/mock-database";
+import { Species, Ecosystem } from "../mockDatabase/mock-database";
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -6,7 +6,7 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
-// Definición de tipos
+// Type definitions
 export interface SessionData {
   user_id: string;
   specie_id: string;
@@ -17,35 +17,35 @@ export interface SessionData {
   start_time: Date;
 }
 
-// Clase que encapsula todas las interacciones con la base de datos
+// Class that encapsulates all database interactions
 export class BackendService {
 
   /**
-   * Obtiene el ID del usuario actual desde el almacenamiento local
+   * Gets the current user ID from local storage
    */
   private async getCurrentUserId(): Promise<string> {
     try {
       const { session } = await chrome.storage.local.get('session');
       if (!session || !session.user || !session.user.id) {
-        throw new Error('Usuario no autenticado');
+        throw new Error('User not authenticated');
       }
       return session.user.id;
     } catch (error) {
-      console.error('Error al obtener el ID del usuario:', error);
-      throw new Error('No se pudo obtener el ID del usuario');
+      console.error('Error getting user ID:', error);
+      throw new Error('Could not get user ID');
     }
   }
   
   /**
-   * Obtiene el ecosistema de un usuario
-   * @param userId - ID del usuario (opcional, si no se proporciona usa el ID del usuario actual)
+   * Gets a user's ecosystem
+   * @param userId - User ID (optional, if not provided uses current user's ID)
    */
   async getEcosystem(userId?: string): Promise<Ecosystem> {
     try {
-      // Usar el ID proporcionado o obtener el ID del usuario actual
+      // Use provided ID or get current user's ID
       const actualUserId = userId || await this.getCurrentUserId();
       
-      // Consultar el ecosistema en Supabase
+      // Query ecosystem in Supabase
       const { data, error } = await supabase
         .from('ecosystem')
         .select('*')
@@ -53,45 +53,101 @@ export class BackendService {
         .single();
       
       if (error) throw error;
-      if (!data) throw new Error('Ecosistema no encontrado');
+      if (!data) throw new Error('Ecosystem not found');
       
       return data as Ecosystem;
     } catch (error) {
-      console.error('Error al obtener el ecosistema:', error);
-      throw new Error('No se pudo cargar la información del ecosistema');
+      console.error('Error getting ecosystem:', error);
+      throw new Error('Could not load ecosystem information');
     }
   }
 
   /**
-   * Obtiene las especies disponibles para un usuario
-   * @param userId - ID del usuario
+   * Gets species available to a user
+   * @param userId - User ID
    */
   async getUserSpecies(userId: string): Promise<Species[]> {
     try {
-      return await mockDb.getUserSpecies(userId);
+      // First, get the user's species collection from storage
+      const { userSpecieCollection } = await chrome.storage.local.get(['userSpecieCollection']);
+
+      if (!userSpecieCollection || !Array.isArray(userSpecieCollection)) {
+        // If not available in storage, fetch it from Supabase
+        const { data: userSpecieData, error: userSpecieError } = await supabase
+          .from('user_specie_collection')
+          .select('*')
+          .eq('user_id', userId);
+        
+        if (userSpecieError) throw userSpecieError;
+        if (!userSpecieData || userSpecieData.length === 0) {
+          return []; // No species found for this user
+        }
+        
+        // Get all species IDs from user's collection
+        const specieIds = userSpecieData.map(item => item.specie_id);
+        
+        // Fetch the actual species data
+        const { data: speciesData, error: speciesError } = await supabase
+          .from('species')
+          .select('*')
+          .in('id', specieIds);
+        
+        if (speciesError) throw speciesError;
+        if (!speciesData) return [];
+        
+        return speciesData as Species[];
+      } else {
+        // Get species IDs from the stored collection
+        const specieIds = userSpecieCollection.map((item: any) => item.specie_id);
+        
+        // Fetch the actual species data
+        const { data: speciesData, error: speciesError } = await supabase
+          .from('species')
+          .select('*')
+          .in('id', specieIds);
+        
+        if (speciesError) throw speciesError;
+        if (!speciesData) return [];
+        
+        return speciesData as Species[];
+      }
     } catch (error) {
-      console.error('Error al obtener las especies del usuario:', error);
-      throw new Error('No se pudieron cargar las especies');
+      console.error('Error getting user species:', error);
+      throw new Error('Could not load species data');
     }
   }
 
   /**
-   * Crea una nueva sesión
-   * @param sessionData - Datos de la sesión a crear
+   * Creates a new session
+   * @param sessionData - Session data to create
    */
   async createSession(sessionData: SessionData): Promise<void> {
     try {
-      await mockDb.createSession(sessionData);
+      // First validate if the action is possible
+      const ecosystem = await this.getEcosystem(sessionData.user_id);
+      const actionName = sessionData.action.charAt(0).toUpperCase() + sessionData.action.slice(1);
+      
+      if (!this.validateAction(actionName, ecosystem)) {
+        throw new Error(`Action "${actionName}" is not valid with current resources.`);
+      }
+      
+      // If validation passes, create the session in Supabase
+      const { error } = await supabase
+        .from('session')
+        .insert([sessionData]);
+      
+      if (error) throw error;
+      
     } catch (error) {
-      console.error('Error al crear la sesión:', error);
-      throw error; // Mantenemos el error original para preservar los mensajes específicos
+      console.error('Error creating session:', error);
+      throw error; // Keep original error to preserve specific messages
     }
   }
 
   /**
-   * Valida si una acción es posible con el estado actual del ecosistema
-   * @param action - Acción a validar
-   * @param eco - Estado actual del ecosistema
+   * Validates if an action is possible with the current ecosystem state
+   * @param action - Action to validate
+   * @param eco - Current ecosystem state
    */
   validateAction(action: string, eco: Ecosystem): boolean {
     switch (action) {
@@ -107,23 +163,23 @@ export class BackendService {
   }
 
   /**
-   * Encuentra una acción válida predeterminada basada en el estado del ecosistema
-   * @param eco - Estado actual del ecosistema
-   * @param actions - Lista de acciones posibles
+   * Finds a default valid action based on ecosystem state
+   * @param eco - Current ecosystem state
+   * @param actions - List of possible actions
    */
   findValidDefaultAction(eco: Ecosystem, actions: readonly string[]): string {
-    // Por defecto "Gather" que generalmente no requiere recursos
+    // Default to "Gather" which generally doesn't require resources
     if (this.validateAction("Gather", eco)) return "Gather";
     
-    // Intentar otras acciones si "Gather" no es válida
+    // Try other actions if "Gather" is not valid
     for (const action of actions) {
       if (this.validateAction(action, eco)) return action;
     }
     
-    // Fallback a "Gather" si no se encuentran acciones válidas (poco probable)
+    // Fallback to "Gather" if no valid actions are found (unlikely)
     return "Gather";
   }
 }
 
-// Exportamos una instancia única del servicio
+// Export a single instance of the service
 export const backendService = new BackendService();

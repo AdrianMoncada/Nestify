@@ -67,36 +67,39 @@ export default function SelectionScreen() {
   const [birdImages, setBirdImages] = useState<Record<string, string>>({});
 
   // Load ecosystem from local storage and user species
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        // Get ecosystem from local storage first
-        const { ecosystem: storedEcosystem } = await chrome.storage.local.get(['ecosystem']);
-        
-        if (storedEcosystem) {
-          setEcosystem(storedEcosystem);
-        } else {
-          setError("Ecosystem data not found in local storage");
-        }
-        
-        // Get user species data
-        const species = await backendService.getUserSpecies("user1");
-        setUserSpecies(species);
-        
-      } catch (error) {
-        if (error instanceof Error) {
-          setError(error.message);
-        } else {
-          setError("Error loading data");
-        }
-      } finally {
-        setIsLoading(false);
+useEffect(() => {
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      // Get ecosystem from local storage
+      const { ecosystem: storedEcosystem } = await chrome.storage.local.get(['ecosystem']);
+      
+      if (storedEcosystem) {
+        setEcosystem(storedEcosystem);
+      } else {
+        setError("Ecosystem data not found in local storage");
       }
-    };
-    
-    loadData();
-  }, []);
+
+      // Get user ID from local storage
+      const { userId } = await chrome.storage.local.get(['userId']);
+      
+      if (userId) {
+        const species = await backendService.getUserSpecies(userId);
+        setUserSpecies(species);
+      } else {
+        setError("User ID not found in local storage");
+      }
+
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Error loading data");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  loadData();
+}, []);
+
 
   // Load stored state on initial render
   useEffect(() => {

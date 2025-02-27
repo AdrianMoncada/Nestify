@@ -45,29 +45,51 @@ async function finishUserOAuth(url: string) {
     await chrome.storage.local.set({ session: data.session });
     console.log('Session saved to chrome.storage.local');
 
+    // Save userId to storage
+    await chrome.storage.local.set({ userId: data.session?.user.id });
+    console.log('User id saved to chrome.storage.local');
+
     // Get user data and log it
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       console.log('Retrieved user data:', user);
       
-      const { data: ecosystem } = await supabase
+      // Fetch ecosystem data
+      const { data: ecosystem, error: ecosystemError } = await supabase
         .from('ecosystem')
         .select('*')
         .eq('user_id', user.id)
         .single();
       
-        if (error) {
-          console.error('Error retrieving ecosystem:', error);
-        } else {
-          console.log('Retrieved ecosystem data:', ecosystem);
+      if (ecosystemError) {
+        console.error('Error retrieving ecosystem:', ecosystemError);
+      } else {
+        console.log('Retrieved ecosystem data:', ecosystem);
+    
+        // Save ecosystem to local storage
+        chrome.storage.local.set({ ecosystem });
+        console.log('Ecosystem saved to chrome.storage.local');
+      }
+
+      console.log('Antes de iniciar fetch de user')
+      // Fetch user's species collection
+      const { data: userSpecieCollection, error: specieError } = await supabase
+        .from('user_specie_collection')
+        .select('*')
+        .eq('user_id', user.id);
       
-          // Guardar el ecosistema en el almacenamiento local
-          chrome.storage.local.set({ ecosystem });
-          console.log('Ecosystem saved to chrome.storage.local');
-        }
+      if (specieError) {
+        console.error('Error retrieving user species collection:', specieError);
+      } else {
+        console.log('Retrieved user species collection:', userSpecieCollection);
+    
+        // Save user species collection to local storage
+        chrome.storage.local.set({ userSpecieCollection });
+        console.log('User species collection saved to chrome.storage.local');
+      }
     }
 
-    // Verificar que la sesión se guardó correctamente
+    // Verify the session was saved correctly
     const savedSession = await chrome.storage.local.get(['session']);
     console.log('Verified saved session:', savedSession);
 
@@ -79,7 +101,7 @@ async function finishUserOAuth(url: string) {
     console.log('OAuth callback handling completed successfully');
   } catch (error) {
     console.error('Error in OAuth callback:', error);
-    throw error; // Re-throw para poder manejarlo en otro lugar si es necesario
+    throw error; // Re-throw to be handled elsewhere if needed
   }
 }
 
@@ -101,23 +123,23 @@ chrome.runtime.onInstalled.addListener(() => {
 async function checkAuthAndState() {
   const { session } = await chrome.storage.local.get('session');
   if (session) {
-    // Verificar sesión con Supabase
+    // Verify session with Supabase
     const { error } = await supabase.auth.setSession(session);
     if (!error) {
-      // Verificar estados en paralelo
+      // Check states in parallel
       const [rewardState, timerState] = await Promise.all([
         chrome.storage.local.get(['rewardState']),
         chrome.storage.local.get(['timerState'])
       ]);
       
-      // Determinar si hay recompensa real con datos válidos
+      // Determine if there's a valid reward with valid data
       const hasValidReward = rewardState?.rewardState && 
                        rewardState.rewardState.reward && 
                        rewardState.rewardState.outcome &&
                        rewardState.rewardState.session &&
                        rewardState.rewardState.viewed === false;
       
-      // Guardar el estado actual
+      // Save current state
       await chrome.storage.local.set({
         appState: {
           isAuthenticated: true,
@@ -127,10 +149,10 @@ async function checkAuthAndState() {
         }
       });
       
-      // Si no hay recompensa válida, limpiar el estado de recompensa para evitar errores
+      // If there's no valid reward, clear the reward state to avoid errors
       if (!hasValidReward && rewardState?.rewardState) {
         await chrome.storage.local.remove(['rewardState']);
-        console.log('Estado de recompensa inválido eliminado');
+        console.log('Invalid reward state removed');
       }
     }
   }
