@@ -66,39 +66,54 @@ export default function SelectionScreen() {
   const [userSpecies, setUserSpecies] = useState<Species[]>([]);
   const [birdImages, setBirdImages] = useState<Record<string, string>>({});
 
-  // Load ecosystem from local storage and user species
-useEffect(() => {
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      // Get ecosystem from local storage
-      const { ecosystem: storedEcosystem } = await chrome.storage.local.get(['ecosystem']);
-      
-      if (storedEcosystem) {
-        setEcosystem(storedEcosystem);
-      } else {
-        setError("Ecosystem data not found in local storage");
+  // Load ecosystem and species data from local storage
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        // Get ecosystem and user ID from local storage
+        const { ecosystem, userId, species, userSpecieCollection } = await chrome.storage.local.get([
+          'ecosystem', 'userId', 'species', 'userSpecieCollection'
+        ]);
+        
+        if (ecosystem) {
+          setEcosystem(ecosystem);
+        } else {
+          setError("Ecosystem data not found in local storage");
+        }
+
+        if (userId) {
+          // Try to use species data from storage first
+          if (species && userSpecieCollection) {
+            // Filter species based on user's collection
+            const specieIds = userSpecieCollection.map((item: any) => item.specie_id);
+            const filteredSpecies = species.filter((specie: Species) => specieIds.includes(specie.id));
+            
+            if (filteredSpecies.length > 0) {
+              setUserSpecies(filteredSpecies);
+            } else {
+              // Fallback to service if filtering didn't work
+              const fetchedSpecies = await backendService.getUserSpecies(userId);
+              setUserSpecies(fetchedSpecies);
+            }
+          } else {
+            // Fallback to backend service if data not in storage
+            const fetchedSpecies = await backendService.getUserSpecies(userId);
+            setUserSpecies(fetchedSpecies);
+          }
+        } else {
+          setError("User ID not found in local storage");
+        }
+
+      } catch (error) {
+        setError(error instanceof Error ? error.message : "Error loading data");
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      // Get user ID from local storage
-      const { userId } = await chrome.storage.local.get(['userId']);
-      
-      if (userId) {
-        const species = await backendService.getUserSpecies(userId);
-        setUserSpecies(species);
-      } else {
-        setError("User ID not found in local storage");
-      }
-
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Error loading data");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  loadData();
-}, []);
+    loadData();
+  }, []);
 
 
   // Load stored state on initial render

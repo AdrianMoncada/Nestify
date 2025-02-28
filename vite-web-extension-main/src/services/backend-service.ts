@@ -45,7 +45,13 @@ export class BackendService {
       // Use provided ID or get current user's ID
       const actualUserId = userId || await this.getCurrentUserId();
       
-      // Query ecosystem in Supabase
+      // Check if ecosystem is in storage first
+      const { ecosystem } = await chrome.storage.local.get(['ecosystem']);
+      if (ecosystem && ecosystem.user_id === actualUserId) {
+        return ecosystem as Ecosystem;
+      }
+      
+      // If not in storage, query ecosystem in Supabase
       const { data, error } = await supabase
         .from('ecosystem')
         .select('*')
@@ -54,6 +60,9 @@ export class BackendService {
       
       if (error) throw error;
       if (!data) throw new Error('Ecosystem not found');
+      
+      // Store for future use
+      chrome.storage.local.set({ ecosystem: data });
       
       return data as Ecosystem;
     } catch (error) {
@@ -68,49 +77,50 @@ export class BackendService {
    */
   async getUserSpecies(userId: string): Promise<Species[]> {
     try {
-      // First, get the user's species collection from storage
-      const { userSpecieCollection } = await chrome.storage.local.get(['userSpecieCollection']);
-
-      if (!userSpecieCollection || !Array.isArray(userSpecieCollection)) {
-        // If not available in storage, fetch it from Supabase
-        const { data: userSpecieData, error: userSpecieError } = await supabase
-          .from('user_specie_collection')
-          .select('*')
-          .eq('user_id', userId);
-        
-        if (userSpecieError) throw userSpecieError;
-        if (!userSpecieData || userSpecieData.length === 0) {
-          return []; // No species found for this user
-        }
-        
-        // Get all species IDs from user's collection
-        const specieIds = userSpecieData.map(item => item.specie_id);
-        
-        // Fetch the actual species data
-        const { data: speciesData, error: speciesError } = await supabase
-          .from('species')
-          .select('*')
-          .in('id', specieIds);
-        
-        if (speciesError) throw speciesError;
-        if (!speciesData) return [];
-        
-        return speciesData as Species[];
-      } else {
-        // Get species IDs from the stored collection
+      // First, try to get the complete species data from storage
+      const { species, userSpecieCollection } = await chrome.storage.local.get(['species', 'userSpecieCollection']);
+      
+      if (species && userSpecieCollection) {
+        // Filter species based on user's collection
         const specieIds = userSpecieCollection.map((item: any) => item.specie_id);
+        const userSpecies = species.filter((specie: Species) => specieIds.includes(specie.id));
         
-        // Fetch the actual species data
-        const { data: speciesData, error: speciesError } = await supabase
-          .from('species')
-          .select('*')
-          .in('id', specieIds);
-        
-        if (speciesError) throw speciesError;
-        if (!speciesData) return [];
-        
-        return speciesData as Species[];
+        if (userSpecies.length > 0) {
+          console.log('Using cached species data from storage');
+          return userSpecies as Species[];
+        }
       }
+      
+      // If not available in storage, fetch from Supabase
+      console.log('Species data not in storage, fetching from Supabase');
+      
+      // Get user's collection
+      const { data: userSpecieData, error: userSpecieError } = await supabase
+        .from('user_specie_collection')
+        .select('*')
+        .eq('user_id', userId);
+      
+      if (userSpecieError) throw userSpecieError;
+      if (!userSpecieData || userSpecieData.length === 0) {
+        return []; // No species found for this user
+      }
+      
+      // Get all species IDs from user's collection
+      const specieIds = userSpecieData.map(item => item.specie_id);
+      
+      // Fetch the actual species data
+      const { data: speciesData, error: speciesError } = await supabase
+        .from('species')
+        .select('*')
+        .in('id', specieIds);
+      
+      if (speciesError) throw speciesError;
+      if (!speciesData) return [];
+      
+      // Store the complete species data for future use
+      chrome.storage.local.set({ species: speciesData });
+      
+      return speciesData as Species[];
     } catch (error) {
       console.error('Error getting user species:', error);
       throw new Error('Could not load species data');

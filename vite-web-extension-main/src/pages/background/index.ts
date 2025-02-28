@@ -86,6 +86,25 @@ async function finishUserOAuth(url: string) {
         // Save user species collection to local storage
         chrome.storage.local.set({ userSpecieCollection });
         console.log('User species collection saved to chrome.storage.local');
+        
+        // Get species IDs from the collection
+        const specieIds = userSpecieCollection.map(item => item.specie_id);
+        
+        // Fetch complete species details
+        const { data: species, error: speciesDetailsError } = await supabase
+          .from('species')
+          .select('*')
+          .in('id', specieIds);
+        
+        if (speciesDetailsError) {
+          console.error('Error retrieving species details:', speciesDetailsError);
+        } else {
+          console.log('Retrieved species details:', species);
+          
+          // Save species details to local storage
+          chrome.storage.local.set({ species });
+          console.log('Species details saved to chrome.storage.local');
+        }
       }
     }
 
