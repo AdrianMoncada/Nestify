@@ -244,23 +244,36 @@ export default function SelectionScreen() {
       setError(`Cannot start session: ${selectedAction} action is invalid with current resources.`);
       return;
     }
-
+  
     try {
+      const result = await chrome.storage.local.get(['userId', 'userSpecieCollection']);
+      const userId = result.userId;
+      const userSpecieCollection = result.userSpecieCollection;
       const currentBird = userSpecies[currentBirdIndex];
       const birdRole = BIRD_ROLES[currentBird.name];
       
+      // Find the corresponding entry in userSpecieCollection
+      const userSpecieEntry = userSpecieCollection.find(entry => 
+        entry.user_id === userId && entry.specie_id === currentBird.id
+      );
+      
+      if (!userSpecieEntry) {
+        throw new Error("Bird not found in user's collection");
+      }
+      
       // Create a session via backendService
       const sessionData = {
-        user_id: "user1",
-        specie_id: currentBird.id,
+        user_id: userId,
+        specie_id: userSpecieEntry.id, // Use the user_specie_collection ID instead of species ID
         action: selectedAction.toLowerCase(),
         duration: timer * 60, // Convert to seconds
         completed: false,
-        cancelled: false,
-        start_time: new Date()
+        start_time: new Date(),
+        cancelled: false
       };
       
       // This will throw an error if validation fails
+      console.log(sessionData);
       await backendService.createSession(sessionData);
       
       const session: SessionState = {

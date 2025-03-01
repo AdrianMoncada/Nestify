@@ -13,8 +13,8 @@ export interface SessionData {
   action: string;
   duration: number;
   completed: boolean;
-  cancelled: boolean;
   start_time: Date;
+  cancelled: boolean;
 }
 
 // Class that encapsulates all database interactions
@@ -128,7 +128,7 @@ export class BackendService {
   }
 
   /**
-   * Creates a new session
+   * Creates a new session using the Edge Function
    * @param sessionData - Session data to create
    */
   async createSession(sessionData: SessionData): Promise<void> {
@@ -141,12 +141,39 @@ export class BackendService {
         throw new Error(`Action "${actionName}" is not valid with current resources.`);
       }
       
-      // If validation passes, create the session in Supabase
-      const { error } = await supabase
-        .from('session')
-        .insert([sessionData]);
+      // Call the Edge Function to create the session
+      // Construct the endpoint URL
+      const endpointUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/start_session`;
       
-      if (error) throw error;
+      // Prepare the payload for the edge function (matches the expected parameters)
+      const payload = {
+        user_id: sessionData.user_id,
+        specie_id: sessionData.specie_id,
+        action: sessionData.action.toLowerCase(), // Ensure lowercase to match Edge Function expectations
+        duration: sessionData.duration,
+        completed: sessionData.completed || false,
+        cancelled: sessionData.cancelled || false
+      };
+      
+      // Make the request to the Edge Function
+      const response = await fetch(endpointUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      // Parse the response
+      const result = await response.json();
+      
+      // Check for errors
+      if (!response.ok || result.status === 'error') {
+        throw new Error(result.message || 'Error creating session via Edge Function');
+      }
+      
+      console.log('Session created successfully:', result);
       
     } catch (error) {
       console.error('Error creating session:', error);
