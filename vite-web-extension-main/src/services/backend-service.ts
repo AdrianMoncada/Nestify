@@ -173,7 +173,10 @@ export class BackendService {
         throw new Error(result.message || 'Error creating session via Edge Function');
       }
       
-      console.log('Session created successfully:', result);
+      // Save the session ID in chrome.storage.local
+chrome.storage.local.set({ sessionId: result.session.id }, () => {
+  console.log('Session ID saved:', result.session.id);
+});
       
     } catch (error) {
       console.error('Error creating session:', error);
@@ -216,6 +219,49 @@ export class BackendService {
     // Fallback to "Gather" if no valid actions are found (unlikely)
     return "Gather";
   }
+
+  /**
+ * Updates the status of an active session
+ * @param sessionId - ID of the session to update
+ * @param status - New status of the session ('cancelled' or 'completed')
+ */
+async updateSessionStatus(sessionId: string, status: 'cancelled' | 'completed'): Promise<void> {
+  try {
+    // Endpoint for updating session status
+    const endpointUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/update_session_status`;
+    
+    // Prepare the payload for the edge function
+    const payload = {
+      session_id: sessionId,
+      status_field: status,
+      status_value: true
+    };
+    
+    // Make the request to the Edge Function
+    const response = await fetch(endpointUrl, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    // Parse the response
+    const result = await response.json();
+    
+    // Check for errors
+    if (!response.ok || result.status === 'error') {
+      throw new Error(result.message || `Error updating session status to ${status}`);
+    }
+    
+    // Remove session ID from storage if the session is cancelled or completed
+    await chrome.storage.local.remove('sessionId');
+  } catch (error) {
+    console.error(`Error updating session status to ${status}:`, error);
+    throw error;
+  }
+}
 }
 
 // Export a single instance of the service

@@ -10,6 +10,7 @@ import { AnimatedBird } from '../../assets/animations/animated-bird';
 import { useNavigate, useLocation } from "react-router-dom";
 import { mockDb, Ecosystem, Session } from "../../mockDatabase/mock-database";
 import { FloatingHeader } from "../../components/FloatingHeader/floating-header";
+import { backendService } from "../../services/backend-service";
 
 
 interface TimerStorage {
@@ -193,7 +194,7 @@ const TimerScreen: React.FC = () => {
   useEffect(() => {
     const loadEcosystem = async () => {
       try {
-        const eco = await mockDb.getEcosystem("user1");
+        const eco = await chrome.storage.local.get(['ecosystem']);
         setEcosystem(eco);
       } catch (error) {
         console.error('Error loading ecosystem:', error);
@@ -281,25 +282,20 @@ const TimerScreen: React.FC = () => {
     };
   }, [isRunning, timeLeft]);
 
-  // Handle session cancellation
   const handleSessionCancel = async () => {
     try {
       // Clear timer state
       await chrome.storage.local.remove(['timerState']);
       
-      // Create cancelled session record with safe defaults
-      const sessionData = {
-        user_id: "user1",
-        completed: false,
-        cancelled: true,
-        duration: currentTimerState?.selectedTime || 0,
-        specie_id: currentTimerState?.selectedBird?.id || 'default',
-        action: currentTimerState?.selectedAction || DEFAULT_ACTION,
-        start_time: new Date(currentTimerState?.startTime || 0)
-      };
-
-      // Only use mockDb for the final record
-      await mockDb.createSession(sessionData);
+      // Get the session ID from storage
+      const { sessionId } = await chrome.storage.local.get('sessionId');
+      
+      if (!sessionId) {
+        throw new Error('No active session found');
+      }
+  
+      // Cancel the session using the backend service
+      await backendService.updateSessionStatus(sessionId, 'cancelled');
       
       // Update app state
       await chrome.runtime.sendMessage({ 
