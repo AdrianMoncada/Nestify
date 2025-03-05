@@ -8,10 +8,19 @@ import { EggAnimation } from '../../assets/animations/EggAnimation';
 import { BuildAnimation } from '../../assets/animations/BuildAnimation';
 import { AnimatedBird } from '../../assets/animations/animated-bird'; 
 import { useNavigate, useLocation } from "react-router-dom";
-import { mockDb, Ecosystem, Session } from "../../mockDatabase/mock-database";
 import { FloatingHeader } from "../../components/FloatingHeader/floating-header";
 import { backendService } from "../../services/backend-service";
 
+
+interface Ecosystem {
+  id: string; // uuid
+  user_id: string; // uuid
+  nests: number;
+  population: number;
+  max_population: number;
+  feathers: number;
+  resources: number;
+}
 
 interface TimerStorage {
   startTime: number;
@@ -20,12 +29,6 @@ interface TimerStorage {
   selectedAction: string;
   selectedTime: number;
   isRunning: boolean;
-}
-
-interface RewardState {
-  outcome: any;
-  session: Session;
-  viewed: boolean;
 }
 
 const TimerScreen: React.FC = () => {
@@ -134,36 +137,26 @@ const TimerScreen: React.FC = () => {
       await chrome.storage.local.remove(['timerState']);
       setIsRunning(false);
   
-      // Create session data from saved timer state
-      const sessionData = {
-        user_id: "user1",
-        completed: true,
-        cancelled: false,
-        duration: savedTimer.selectedTime,
-        specie_id: savedTimer.selectedBird?.id || 'default',
-        action: savedTimer.selectedAction || DEFAULT_ACTION,
-        start_time: new Date(savedTimer.startTime)
-      };
   
-      // First create the session
-      const completedSession = await mockDb.createSession(sessionData);
+     // Get the session ID from storage
+     const { sessionId } = await chrome.storage.local.get('sessionId');
       
-      // Then get the session outcome
-      const sessionOutcome = await mockDb.createSessionOutcome(completedSession);
+     if (!sessionId) {
+      throw new Error('No active session found');
+    }
+
+    // Update session status, which triggers outcomes processing
+    const result = await backendService.updateSessionStatus(sessionId, 'completed');
   
-      if (!sessionOutcome) {
-        throw new Error('Failed to retrieve session outcome');
-      }
-  
-      // Save reward state before navigation
-      const rewardState = {
-        outcome: sessionOutcome,
-        session: completedSession,
-        viewed: false
-      };
+    const rewardState = {
+      outcome: result.session_outcomes,
+      session: { completed: true, action: currentTimerState?.selectedAction },
+      viewed: false,
+      updatedEcosystem: result.updated_ecosystem
+    };
   
       // Almacenar el estado de recompensa antes de navegar
-      await chrome.storage.local.set({ rewardState });
+      await chrome.storage.local.set({ rewardState, ecosystem: result.updated_ecosystem });
       
       // Update app state
       await chrome.runtime.sendMessage({ 
@@ -179,23 +172,26 @@ const TimerScreen: React.FC = () => {
       // Navigate to reward screen with the necessary data
       navigate('/reward', { 
         state: { 
-          outcome: sessionOutcome,
-          session: completedSession
+          outcome: result.session_outcomes,
+          session: { completed: true },
+          updatedEcosystem: result.updated_ecosystem
         }
       });
     } catch (error) {
       console.error('Error handling expired timer:', error);
-      setError('Failed to process completed session. Please restart the app.');
-      setIsLoading(false);
+      setError('Failed to process completed session');
+      navigate('/');
     }
   };
 
   // Load ecosystem data
   useEffect(() => {
     const loadEcosystem = async () => {
+      console.log("loadEcosystem beep")
       try {
-        const eco = await chrome.storage.local.get(['ecosystem']);
-        setEcosystem(eco);
+        const { ecosystem } = await chrome.storage.local.get(['ecosystem']);
+        console.log("ecosystem data:", ecosystem);  // Directly log the ecosystem object
+        setEcosystem(ecosystem);
       } catch (error) {
         console.error('Error loading ecosystem:', error);
         setError('Failed to load ecosystem data');
@@ -210,30 +206,24 @@ const TimerScreen: React.FC = () => {
       await chrome.storage.local.remove(['timerState']);
       setIsRunning(false);
   
-      const sessionData = {
-        user_id: "user1",
-        completed: true,
-        cancelled: false,
-        duration: currentTimerState?.selectedTime || 0,
-        specie_id: currentTimerState?.selectedBird?.id || 'default',
-        action: currentTimerState?.selectedAction || DEFAULT_ACTION,
-        start_time: new Date(currentTimerState?.startTime || 0)
-      };
-  
-      const completedSession = await mockDb.createSession(sessionData);
-      const sessionOutcome = await mockDb.createSessionOutcome(completedSession);
-  
-      if (!sessionOutcome) {
-        throw new Error('Failed to retrieve session outcome');
+      // Get the session ID from storage
+      const { sessionId } = await chrome.storage.local.get('sessionId');
+      
+      if (!sessionId) {
+        throw new Error('No active session found');
       }
   
+      // Update session status, which triggers outcomes processing
+      const result = await backendService.updateSessionStatus(sessionId, 'completed');
+  
       // Save reward state before navigation
-      const rewardState: RewardState = {
-        outcome: sessionOutcome,
-        session: completedSession,
+      const rewardState = {
+        outcome: result.session_outcomes,
+        session: { completed: true, action: currentTimerState?.selectedAction },
         viewed: false
       };
       
+      console.log(rewardState);
       await chrome.storage.local.set({ rewardState });
       
       // Update app state
@@ -249,13 +239,15 @@ const TimerScreen: React.FC = () => {
   
       navigate('/reward', { 
         state: { 
-          outcome: sessionOutcome,
-          session: completedSession
+          outcome: result.session_outcomes,
+          session: { completed: true },
+          updatedEcosystem: result.updated_ecosystem
         }
       });
     } catch (error) {
       console.error('Error completing session:', error);
       setError('Failed to process completed session');
+      navigate('/');
     }
   };
 
@@ -295,7 +287,7 @@ const TimerScreen: React.FC = () => {
       }
   
       // Cancel the session using the backend service
-      await backendService.updateSessionStatus(sessionId, 'cancelled');
+      await backendService.updateSessionStatus(sessionId, "cancelled");
       
       // Update app state
       await chrome.runtime.sendMessage({ 

@@ -4,16 +4,24 @@ import { useLocation, useNavigate } from "react-router-dom";
 import HatchRewardAnimation from "../../assets/animations/hatch-reward-animation";
 import { Button } from "../../components/button/Button";
 import { Tooltip } from "../../components/Tooltip/tooltip-component";
-import { SessionOutcome, Ecosystem, mockDb } from "../../mockDatabase/mock-database";
+import { backendService } from "../../services/backend-service";
 
-
-
+interface Ecosystem {
+  id: string; // uuid
+  user_id: string; // uuid
+  nests: number;
+  population: number;
+  max_population: number;
+  feathers: number;
+  resources: number;
+}
 interface LocationState {
-  outcome: SessionOutcome;
+  outcome: any;
   session: {
     action: string;
     completed: boolean;
   };
+  updatedEcosystem?: Ecosystem;
 }
 
 interface CountState {
@@ -38,36 +46,62 @@ export default function RewardScreen() {
     bird: 0,
   });
 
-  // Load reward data from storage if not provided via location
   useEffect(() => {
     const loadRewardData = async () => {
       try {
-        if (location.state) {
-          setRewardData(location.state as LocationState);
-          setIsLoading(false);
-        } else {
-          const storage = await chrome.storage.local.get(['rewardState']);
-          console.log("RewardScreen - Estado cargado:", storage.rewardState);
+        console.log("Starting loadRewardData");
+
+        // First, check navigation state
+        if (location.state?.outcome && location.state?.session) {
+          console.log("Using reward data from navigation state:", location.state);
+          setRewardData(location.state);
           
-          // Verificación más estricta
-          if (storage.rewardState && 
-              storage.rewardState.outcome && 
-              storage.rewardState.session) {
-            setRewardData({
-              outcome: storage.rewardState.outcome,
-              session: storage.rewardState.session
-            });
-            setIsLoading(false);
+          // Use passed ecosystem or fetch from service
+          if (location.state.updatedEcosystem) {
+            console.log("Using passed ecosystem:", location.state.updatedEcosystem);
+            setEcosystem(location.state.updatedEcosystem);
           } else {
-            console.error("RewardScreen - Datos de recompensa inválidos:", storage);
-            // Limpiar datos inválidos y redirigir
-            await chrome.storage.local.remove(['rewardState']);
-            navigate('/', { replace: true });
+            console.log("Fetching ecosystem from service");
+            const currentEcosystem = await backendService.getEcosystem();
+            console.log("Fetched ecosystem:", currentEcosystem);
+            setEcosystem(currentEcosystem);
           }
+          
+          setIsLoading(false);
+          return;
         }
+
+        console.log("No reward data in navigation state, checking storage");
+
+        // Fallback to stored reward state
+        const storage = await chrome.storage.local.get(['rewardState', 'ecosystem']);
+        console.log("Storage data:", storage);
+        
+        if (storage.rewardState?.outcome && storage.rewardState?.session) {
+          console.log("Using reward data from storage:", storage.rewardState);
+          setRewardData({
+            outcome: storage.rewardState.outcome,
+            session: storage.rewardState.session
+          });
+          
+          // Use stored ecosystem or fetch fresh
+          if (storage.ecosystem) {
+            console.log("Using stored ecosystem:", storage.ecosystem);
+            setEcosystem(storage.ecosystem);
+          } else {
+            console.log("Fetching fresh ecosystem from service");
+            const currentEcosystem = await backendService.getEcosystem();
+            console.log("Fetched ecosystem:", currentEcosystem);
+            setEcosystem(currentEcosystem);
+          }
+        } else {
+          throw new Error('No reward data available');
+        }
+        
+        setIsLoading(false);
       } catch (error) {
         console.error('Error loading reward data:', error);
-        setError("Failed to load reward data");
+        setError('Failed to load reward data');
         setIsLoading(false);
       }
     };
@@ -75,19 +109,20 @@ export default function RewardScreen() {
     loadRewardData();
   }, [location.state, navigate]);
 
+
   // Load initial ecosystem state
-  useEffect(() => {
-    const loadEcosystem = async () => {
-      try {
-        const eco = await mockDb.getEcosystem("user1");
-        setEcosystem(eco);
-      } catch (error) {
-        console.error('Error loading ecosystem:', error);
-        setError("Failed to load ecosystem data");
-      }
-    };
-    loadEcosystem();
-  }, []);
+  // useEffect(() => {
+  //   const loadEcosystem = async () => {
+  //     try {
+  //       const eco = await mockDb.getEcosystem("user1");
+  //       setEcosystem(eco);
+  //     } catch (error) {
+  //       console.error('Error loading ecosystem:', error);
+  //       setError("Failed to load ecosystem data");
+  //     }
+  //   };
+  //   loadEcosystem();
+  // }, []);
 
   // Calculate changes based on session outcome
   const calculateChanges = () => {
@@ -96,15 +131,15 @@ export default function RewardScreen() {
     const outcome = rewardData.outcome;
     return {
       leaf: {
-        value: ecosystem.resources + outcome.resources_gained - outcome.resources_spent,
+        value: ecosystem.resources,
         change: outcome.resources_gained - outcome.resources_spent,
       },
       feather: {
-        value: ecosystem.feathers + outcome.feathers_gained - outcome.feathers_spent,
+        value: ecosystem.feathers,
         change: outcome.feathers_gained - outcome.feathers_spent,
       },
       house: {
-        value: ecosystem.nests + outcome.nests_created,
+        value: ecosystem.nests,
         change: outcome.nests_created > 0 ? `+${outcome.nests_created}` : "+0",
       },
       bird: {

@@ -8,10 +8,20 @@ import { TimerButton } from "../../components/TimerButton/TimerButton";
 import { Eye, Backpack, Wind, HousePlus } from 'lucide-react';
 import { Tooltip } from "../../components/Tooltip/tooltip-component";
 import { SessionState } from "../../types/session-types";
-import { Species, Ecosystem } from "../../mockDatabase/mock-database";
+import { Species} from "../../mockDatabase/mock-database";
 import { FloatingHeader } from "../../components/FloatingHeader/floating-header";
 import { ErrorAlert} from "../../components/ErrorAlert/ErrorAlert";
 import { backendService } from "../../services/backend-service";
+
+interface Ecosystem {
+  id: string; // uuid
+  user_id: string; // uuid
+  nests: number;
+  population: number;
+  max_population: number;
+  feathers: number;
+  resources: number;
+}
 
 // Bird role configuration
 const BIRD_ROLES = {
@@ -75,6 +85,8 @@ export default function SelectionScreen() {
         const { ecosystem, userId, species, userSpecieCollection } = await chrome.storage.local.get([
           'ecosystem', 'userId', 'species', 'userSpecieCollection'
         ]);
+
+        console.log('Ecosystem Data:', ecosystem);
         
         if (ecosystem) {
           setEcosystem(ecosystem);
