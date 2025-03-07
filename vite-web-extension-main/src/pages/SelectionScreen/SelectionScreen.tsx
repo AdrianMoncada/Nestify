@@ -12,6 +12,7 @@ import { Species} from "../../mockDatabase/mock-database";
 import { FloatingHeader } from "../../components/FloatingHeader/floating-header";
 import { ErrorAlert} from "../../components/ErrorAlert/ErrorAlert";
 import { backendService } from "../../services/backend-service";
+import { HamburgerMenu } from "@src/components/HamburgerMenu/HamburgerMenu";
 
 interface Ecosystem {
   id: string; // uuid
@@ -372,6 +373,15 @@ export default function SelectionScreen() {
 
   return (
     <div className="relative">
+      <HamburgerMenu
+          enabledOptions={{
+            profile: false,
+            // deshabilitado
+            settings: false,
+            // deshabilitado
+            logout: true, // habilitado
+          }}
+        />
       {/* Floating error message */}
       {error && (
         <ErrorAlert 
