@@ -114,7 +114,7 @@ async function finishUserOAuth(url: string) {
 
     // Redirect to success page
     chrome.tabs.update({ 
-      url: chrome.runtime.getURL("src/pages/AuthSucessPage/auth-success.html")
+      url: "https://nestify-eta.vercel.app/"
     });
     
     console.log('OAuth callback handling completed successfully');
