@@ -2,24 +2,29 @@ import React from 'react';
 import HatchRewardImage from '../../assets/img/Hatch.png';
 import GatherRewardImage from '../../assets/img/Gather.png';
 import BuildRewardImage from '../../assets/img/Build.png';
+import DefaultRewardImage from '../../assets/img/Robin.png'
 
 interface RewardAnimationProps {
   actionType?: string;
 }
 
-const HatchRewardAnimation: React.FC<RewardAnimationProps> = ({ actionType = 'hatch' }) => {
+const HatchRewardAnimation: React.FC<RewardAnimationProps> = ({ actionType }) => {
+  console.log(actionType);
   // Determinar qué imagen mostrar según la acción
   const getRewardImage = () => {
+    if (!actionType) return DefaultRewardImage; // O cualquier imagen por defecto que desees
     switch (actionType.toLowerCase()) {
       case 'gather':
         return GatherRewardImage;
       case 'build':
         return BuildRewardImage;
       case 'hatch':
-      default:
         return HatchRewardImage;
+      default:
+        return DefaultRewardImage; // Si actionType no coincide con ninguna opción
     }
   };
+
 
   return (
     <div className="relative w-full h-full flex items-center justify-center">

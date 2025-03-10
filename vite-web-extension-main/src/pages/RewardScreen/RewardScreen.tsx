@@ -245,7 +245,7 @@ export default function RewardScreen() {
       {/* Animation Container */}
       <div className="flex-1 flex flex-col items-center justify-center">
       <div className="relative" style={{ width: "250px", height: "250px" }}>
-  <HatchRewardAnimation actionType={rewardData?.session?.action} />
+      <HatchRewardAnimation actionType={rewardData.session.action || "gather"} />
 </div>
       </div>
 
@@ -305,7 +305,7 @@ export default function RewardScreen() {
 
         <div className="flex justify-center mb-4">
           <div className="w-5/5">
-            <Button variant="primary" onClick={handleStartNewSession}>
+            <Button variant="primary" onClick={handleStartNewSession} className="px-6 py-3 text-lg">
               Start Another Session
             </Button>
           </div>

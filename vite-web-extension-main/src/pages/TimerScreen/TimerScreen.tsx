@@ -173,7 +173,10 @@ const TimerScreen: React.FC = () => {
       navigate('/reward', { 
         state: { 
           outcome: result.session_outcomes,
-          session: { completed: true },
+          session: { 
+            completed: true, 
+            action: currentTimerState?.selectedAction?.toLowerCase() || "gather" 
+          },
           updatedEcosystem: result.updated_ecosystem
         }
       });
@@ -240,7 +243,10 @@ const TimerScreen: React.FC = () => {
       navigate('/reward', { 
         state: { 
           outcome: result.session_outcomes,
-          session: { completed: true },
+          session: { 
+            completed: true, 
+            action: currentTimerState?.selectedAction?.toLowerCase() || "gather" 
+          },
           updatedEcosystem: result.updated_ecosystem
         }
       });
