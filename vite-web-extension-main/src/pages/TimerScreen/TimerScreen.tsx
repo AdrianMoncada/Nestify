@@ -442,22 +442,20 @@ const TimerScreen: React.FC = () => {
               Are you sure you want to cancel your focus session?
             </p>
             <div className="flex justify-center gap-4">
-              <button
+              <Button variant="negative" className="text-sm px-8"
                 onClick={handleSessionCancel}
-                className="px-6 py-2 text-white rounded-full bg-[#ED834D] shadow-[0_6px_0_0_#CA6F41] hover:brightness-110 active:shadow-[0_0px_0_0_#CA6F41] active:translate-y-[6px] transition-all duration-75"
               >
                 Yes
-              </button>
-              <button
+              </Button>
+              <Button variant="positive" className="text-sm px-8"
                 onClick={() => {
                   setShowModal(false);
                   setCloudsMoving(true);
                   setShowRain(false);
                 }}
-                className="px-6 py-2 text-[#784E2F] rounded-full bg-[#DED75A] shadow-[0_6px_0_0_#98A64F] hover:brightness-110 active:shadow-[0_0px_0_0_#98A64F] active:translate-y-[6px] transition-all duration-75"
               >
                 No
-              </button>
+              </Button>
             </div>
           </div>
         </div>
