@@ -1,14 +1,33 @@
 import React from 'react';
-import HatchedBird from '../../assets/img/Hatch.png';
+import HatchRewardImage from '../../assets/img/Hatch.png';
+import GatherRewardImage from '../../assets/img/Gather.png';
+import BuildRewardImage from '../../assets/img/Build.png';
 
-const HatchRewardAnimation = () => {
+interface RewardAnimationProps {
+  actionType?: string;
+}
+
+const HatchRewardAnimation: React.FC<RewardAnimationProps> = ({ actionType = 'hatch' }) => {
+  // Determinar qué imagen mostrar según la acción
+  const getRewardImage = () => {
+    switch (actionType.toLowerCase()) {
+      case 'gather':
+        return GatherRewardImage;
+      case 'build':
+        return BuildRewardImage;
+      case 'hatch':
+      default:
+        return HatchRewardImage;
+    }
+  };
+
   return (
     <div className="relative w-full h-full flex items-center justify-center">
       
-        {/* Hatched Bird */}
+        {/* Reward Image based on action */}
         <img
-          src={HatchedBird}
-          alt="Hatched Bird"
+          src={getRewardImage()}
+          alt={`${actionType} Reward`}
           className="w-48 h-48 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 animate-egg-sequence object-contain"
         />
         

@@ -244,9 +244,9 @@ export default function RewardScreen() {
       
       {/* Animation Container */}
       <div className="flex-1 flex flex-col items-center justify-center">
-        <div className="relative" style={{ width: "250px", height: "250px" }}>
-          <HatchRewardAnimation />
-        </div>
+      <div className="relative" style={{ width: "250px", height: "250px" }}>
+  <HatchRewardAnimation actionType={rewardData?.session?.action} />
+</div>
       </div>
 
       <div className="p-4 flex flex-col items-center w-full">
