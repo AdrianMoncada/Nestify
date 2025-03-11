@@ -380,6 +380,7 @@ export default function SelectionScreen() {
             settings: false,
             // deshabilitado
             logout: true, // habilitado
+            mellowtel: true
           }}
         />
       {/* Floating error message */}

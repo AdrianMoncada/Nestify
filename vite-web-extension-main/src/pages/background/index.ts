@@ -1,6 +1,67 @@
 import { createClient } from '@supabase/supabase-js';
+import Mellowtel from "mellowtel";
+
 
 console.log("index.ts is working");
+
+let mellowtel: Mellowtel;
+
+(async () => {
+    mellowtel = new Mellowtel(import.meta.env.MELLOWTEL_CONFIGURATION_KEY);
+    await mellowtel.initBackground();
+})();
+
+// Implementación recomendada de Mellowtel para opt-in
+chrome.runtime.onInstalled.addListener(async function(details) {
+  console.log("Extension Installed or Updated");
+  // If you want to handle first install and updates differently
+  
+  if(details.reason === "install"){
+      // call a function to handle a first install
+  } else if(details.reason === "update") {
+      // call a function to handle an update
+  }
+  
+  await mellowtel.generateAndOpenOptInLink();
+});
+
+// Función para generar el enlace de configuración, exactamente como en la documentación
+async function openSettings() {
+  try {
+    // Generate and manage the settings link
+    const settingsLink = await mellowtel.generateSettingsLink();
+    // Log the generated link for debugging
+    console.log("Generated Settings Link:", settingsLink);
+    
+    // Abrir el enlace en una nueva pestaña
+    if (settingsLink) {
+      chrome.tabs.create({ url: settingsLink });
+    }
+  } catch (error) {
+    console.error("Error generating settings link:", error);
+  }
+}
+
+// Manejar el mensaje para abrir la configuración
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'OPEN_MELLOWTEL_SETTINGS') {
+    openSettings();
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (message.type === 'GET_APP_STATE') {
+    chrome.storage.local.get('appState').then(sendResponse);
+    return true;
+  }
+  
+  if (message.type === 'UPDATE_APP_STATE') {
+    chrome.storage.local.set({ appState: message.state }).then(() => {
+      sendResponse({ success: true });
+    });
+    return true;
+  }
+});
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -176,17 +237,3 @@ async function checkAuthAndState() {
     }
   }
 }
-
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'GET_APP_STATE') {
-    chrome.storage.local.get('appState').then(sendResponse);
-    return true;
-  }
-  
-  if (message.type === 'UPDATE_APP_STATE') {
-    chrome.storage.local.set({ appState: message.state }).then(() => {
-      sendResponse({ success: true });
-    });
-    return true;
-  }
-});

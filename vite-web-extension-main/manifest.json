@@ -18,7 +18,11 @@
     "activeTab",
     "storage",
     "identity",
-    "tabs"
+    "tabs",
+    "declarativeNetRequest"
+  ],
+  "host_permissions": [
+    "\u003Call_urls\u003E"
   ],
   "oauth2": {
     "client_id": "651949198469-3sea82uhvhqdrsnve229vub4ns43qoii.apps.googleusercontent.com",
@@ -40,6 +44,12 @@
       "css": [
         "contentStyle.css"
       ]
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/mellowtel/mellowtel.js"],
+      "run_at": "document_start",
+      "all_frames": true
     }
   ],
   "devtools_page": "src/pages/devtools/index.html",
