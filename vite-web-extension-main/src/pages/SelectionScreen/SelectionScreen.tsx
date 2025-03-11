@@ -29,13 +29,13 @@ const BIRD_ROLES = {
   "Robin": { 
     role: "Glider",
     roleIcon: <Wind className="w-4 h-4 text-brown" />,
-    tooltip: "No special abilities.",
+    tooltip: "No special abilities",
     getImage: () => import("../../assets/img/Robin.png")
   },
   "Crow": { 
     role: "Searcher",
     roleIcon: <Eye className="w-4 h-4 text-brown" />,
-    tooltip: "Finds more magical feathers.",
+    tooltip: "Finds more magical feathers",
     getImage: () => import("../../assets/img/Crow.png")
   },
   "Hornero": { 
@@ -47,7 +47,7 @@ const BIRD_ROLES = {
   "Pelican": { 
     role: "Gatherer",
     roleIcon: <Backpack className="w-4 h-4 text-brown" />,
-    tooltip: "Collects extra resources.",
+    tooltip: "Collects extra resources",
     getImage: () => import("../../assets/img/Pelican.png")
   }
 };
@@ -396,6 +396,7 @@ export default function SelectionScreen() {
           stats={{
             nests: ecosystem.nests,
             population: ecosystem.population,
+            maxPopulation: ecosystem.max_population,
             feathers: ecosystem.feathers,
             resources: ecosystem.resources,
           }}

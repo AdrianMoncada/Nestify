@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, Bird, Home, Feather, Leaf } from "lucide-react";
+import { Tooltip } from "../Tooltip/tooltip-component";
 
 interface Stats {
   nests: number;
   population: number;
+  maxPopulation: number;
   feathers: number;
   resources: number;
 }
@@ -14,33 +16,34 @@ interface FloatingHeaderProps {
   descriptions?: {
     nests?: string;
     population?: string;
+    maxPopulation?: string;
     feathers?: string;
     resources?: string;
   };
 }
 
-interface TooltipProps {
-  content: string;
-  children: React.ReactNode;
-}
+// interface TooltipProps {
+//   content: string;
+//   children: React.ReactNode;
+// }
 
-const Tooltip = ({ content, children }: TooltipProps) => {
-  return (
-    <div className="group relative">
-      {children}
-      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-[8px] text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-        {content}
-      </div>
-    </div>
-  );
-};
+// const Tooltip = ({ content, children }: TooltipProps) => {
+//   return (
+//     <div className="group relative">
+//       {children}
+//       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-[8px] text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+//         {content}
+//       </div>
+//     </div>
+//   );
+// };
 
 export const FloatingHeader: React.FC<FloatingHeaderProps> = ({ 
   stats,
   descriptions = {
     nests: "Total nests built",
-    population: "Current bird population",
-    feathers: "Total collected feathers",
+    population: "Population and max population",
+    feathers: "Available feathers",
     resources: "Available resources",
   }
 }) => {
@@ -100,52 +103,52 @@ export const FloatingHeader: React.FC<FloatingHeaderProps> = ({
               stiffness: 300,
               damping: 30,
             }}
-            className="absolute right-0 top-0 h-[187px] w-[100px] bg-white/50 backdrop-blur-sm shadow-lg rounded-l-xl p-3 border-2 border-[#784E2F] border-r-0"
+            className="absolute right-0 top-0 h-[187px] w-[120px] bg-white/50 backdrop-blur-sm shadow-lg rounded-l-xl p-3 border-2 border-[#784E2F] border-r-0"
           >
             <div className="flex flex-col justify-between h-full">
-              <Tooltip content={descriptions.nests || ""}>
+              <Tooltip position="left" content={descriptions.nests || ""}>
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center border-2 border-[#784E2F] shadow-[0_2px_0_#9ca3af] hover:bg-gray-300 transition-colors cursor-help">
                     <Home className="w-4 h-4 text-[#784E2F]" />
                   </div>
                   <div className="bg-white rounded-lg px-2 py-0.5 min-w-[32px] flex justify-center">
-                    <span className="font-medium text-xs text-[#784E2F]">
+                    <span className="font-medium text-sm text-[#784E2F]">
                       {stats.nests}
                     </span>
                   </div>
                 </div>
               </Tooltip>
-              <Tooltip content={descriptions.population || ""}>
+              <Tooltip position="left" content={descriptions.population || ""}>
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center border-2 border-[#784E2F] shadow-[0_2px_0_#9ca3af] hover:bg-gray-300 transition-colors cursor-help">
                     <Bird className="w-4 h-4 text-[#784E2F]" />
                   </div>
                   <div className="bg-white rounded-lg px-2 py-0.5 min-w-[32px] flex justify-center">
-                    <span className="font-medium text-xs text-[#784E2F]">
-                      {stats.population}
+                    <span className="font-medium tex-sm text-[#784E2F]">
+                      {stats.population}/{stats.maxPopulation}
                     </span>
                   </div>
                 </div>
               </Tooltip>
-              <Tooltip content={descriptions.feathers || ""}>
+              <Tooltip position="left" content={descriptions.feathers || ""}>
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center border-2 border-[#784E2F] shadow-[0_2px_0_#9ca3af] hover:bg-gray-300 transition-colors cursor-help">
                     <Feather className="w-4 h-4 text-[#784E2F]" />
                   </div>
                   <div className="bg-white rounded-lg px-2 py-0.5 min-w-[32px] flex justify-center">
-                    <span className="font-medium text-xs text-[#784E2F]">
+                    <span className="font-medium text-sm text-[#784E2F]">
                       {stats.feathers}
                     </span>
                   </div>
                 </div>
               </Tooltip>
-              <Tooltip content={descriptions.resources || ""}>
+              <Tooltip position="left" content={descriptions.resources || ""}>
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center border-2 border-[#784E2F] shadow-[0_2px_0_#9ca3af] hover:bg-gray-300 transition-colors cursor-help">
                     <Leaf className="w-4 h-4 text-[#784E2F]" />
                   </div>
                   <div className="bg-white rounded-lg px-2 py-0.5 min-w-[32px] flex justify-center">
-                    <span className="font-medium text-xs text-[#784E2F]">
+                    <span className="font-medium text-sm text-[#784E2F]">
                       {stats.resources}
                     </span>
                   </div>

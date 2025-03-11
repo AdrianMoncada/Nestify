@@ -9,9 +9,9 @@ const actionIcons = {
 };
 
 const tooltipContent = {
-  Build: "• Build: Use resources to expand your ecosystem",
-  Gather: "• Gather: Collect resources for your ecosystem",
-  Hatch: "• Hatch: Use magic feathers to get new birds"
+  Build: "Build nests using resources",
+  Gather: "Gather resources",
+  Hatch: "Hatch eggs using feathers"
 };
 
 interface ActionButtonProps {

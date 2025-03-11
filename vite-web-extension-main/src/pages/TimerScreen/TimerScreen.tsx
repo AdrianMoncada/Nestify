@@ -93,6 +93,7 @@ const TimerScreen: React.FC = () => {
           // Initialize new timer
           const newTimerState: TimerStorage = {
             startTime: new Date().getTime(),
+            // Update to test flow timer app
             totalDuration: session.selectedTime * 1,
             selectedBird: session.selectedBird || DEFAULT_BIRD,
             selectedAction: session.selectedAction || DEFAULT_ACTION,
@@ -376,6 +377,7 @@ const TimerScreen: React.FC = () => {
           stats={{
             nests: ecosystem.nests,
             population: ecosystem.population,
+            maxPopulation: ecosystem.max_population,
             feathers: ecosystem.feathers,
             resources: ecosystem.resources,
           }}
@@ -383,13 +385,13 @@ const TimerScreen: React.FC = () => {
       )}
 
       <div className="relative z-10 flex items-center justify-center gap-6 p-4 mx-4 mt-4 bg-white/80 rounded-2xl">
-        <Tooltip content={displayState?.selectedBird?.tooltip || "Bird"}>
+        <Tooltip position="bottom" content={displayState?.selectedBird?.tooltip || "Bird"}>
           <div className="flex items-center gap-2 text-[#784E2F] cursor-help">
             <Bird size={20} />
             <span>{displayState?.selectedBird?.name || "Bird"}</span>
           </div>
         </Tooltip>
-        <Tooltip content="Current Action">
+        <Tooltip position="bottom" content="Current Action">
           <div className="flex items-center gap-2 text-[#784E2F] cursor-help">
             {displayState?.selectedAction === 'Hatch' ? <Egg size={20} /> : 
              displayState?.selectedAction === 'Build' ? <House size={20} /> :
@@ -397,7 +399,7 @@ const TimerScreen: React.FC = () => {
             <span>{displayState?.selectedAction || "Action"}</span>
           </div>
         </Tooltip>
-        <Tooltip content="Minutes for focus session">
+        <Tooltip position="bottom" content="Minutes for focus session">
           <div className="flex items-center gap-2 text-[#784E2F] cursor-help">
             <Clock size={20} />
             <span>{Math.ceil(timeLeft / 60)}</span>

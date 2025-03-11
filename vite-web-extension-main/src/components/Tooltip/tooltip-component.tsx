@@ -26,7 +26,7 @@ export const Tooltip = ({
       case "negative":
         return <AlertCircle className="w-3 h-3 text-red-600" />;
       default:
-        return <Info className="w-3 h-3 text-white-600" />;
+        return <Info className="w-3 h-3 text-blue-600" />;
     }
   };
 
@@ -35,6 +35,15 @@ export const Tooltip = ({
     bottom: "top-full left-1/2 -translate-x-1/2 mt-2",
     left: "right-full top-1/2 -translate-y-1/2 mr-2",
     right: "left-full top-1/2 -translate-y-1/2 ml-2",
+  };
+
+  // Determinar el ancho máximo basado en la longitud del contenido
+  const getWidthClass = () => {
+    const contentLength = content.length;
+    if (contentLength < 10) return "w-20"; // Texto muy corto
+    if (contentLength < 30) return "w-36"; // Texto corto
+    if (contentLength < 70) return "w-52"; // Texto mediano
+    return "w-72"; // Texto largo
   };
 
   return (
@@ -46,7 +55,7 @@ export const Tooltip = ({
         {children}
       </div>
       {isVisible && (
-        <div className={`absolute z-10 w-48 ${positionClasses[position]}`}>
+        <div className={`absolute z-10 ${getWidthClass()} max-w-sm ${positionClasses[position]}`}>
           <div className="bg-white border-2 border-[#8B4513] rounded-lg shadow-lg p-2 animate-fadeIn">
             <div className="flex items-start gap-1.5">
               {/* {getIcon()} */}

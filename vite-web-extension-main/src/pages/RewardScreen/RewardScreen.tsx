@@ -150,10 +150,10 @@ export default function RewardScreen() {
   };
 
   const descriptions = {
-    leaf: "resources for building nests",
-    house: "nests created",
-    feather: "feathers for hatching eggs",
-    bird: "bird population and max bird population",
+    leaf: "Available resources",
+    house: "Total nests built",
+    feather: "Available feathers",
+    bird: "Population and max population",
   } as const;
 
   // Animate counts
@@ -179,7 +179,10 @@ export default function RewardScreen() {
           Math.ceil((changes.house?.value || 0) / steps * step),
           changes.house?.value || 0
         ),
-        bird: ecosystem.population + rewardData.outcome.population_increase,
+        bird: Math.min(
+          Math.ceil((ecosystem.population + rewardData.outcome.population_increase) / steps * step),
+          ecosystem.population + rewardData.outcome.population_increase
+        ),
       }));
     };
 
@@ -250,7 +253,7 @@ export default function RewardScreen() {
       </div>
 
       <div className="p-4 flex flex-col items-center w-full">
-        <div className="grid grid-cols-2 gap-x-4 gap-y-3 w-full max-w-xs mb-6">
+        <div className="grid grid-cols-2 gap-x-1 gap-y-3 w-full max-w-xs mb-6">
           {[
             {
               icon: <Leaf size={20} />,
@@ -272,14 +275,14 @@ export default function RewardScreen() {
             },
             {
               icon: <Bird size={20} />,
-              value: counts.bird,
+              value: `${counts.bird}/${ecosystem.max_population + rewardData.outcome.max_population_increase}`,
               change: changes.bird?.change,
               type: "bird" as keyof typeof descriptions,
             },
           ].map((item, i) => (
             <div key={i} className="flex items-center gap-2">
-              <Tooltip content={descriptions[item.type]} position="top">
-                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center border-2 border-[#784E2F] shadow-[0_2px_0_#9ca3af] hover:bg-gray-300 transition-colors cursor-help">
+              <Tooltip content={descriptions[item.type]} position="right">
+                <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center border-2 border-[#784E2F] shadow-[0_2px_0_#9ca3af] hover:bg-gray-200 transition-colors cursor-help">
                   <span className="text-[#784E2F]">{item.icon}</span>
                 </div>
               </Tooltip>
@@ -289,12 +292,12 @@ export default function RewardScreen() {
                 </span>
               </div>
               <span
-                className={`text-base ${
+                className={`text-lg ${
                   Number(item.change) < 0
-                    ? "text-red-500"
+                    ? "text-red"
                     : Number(item.change) === 0
-                    ? "text-gray-500"
-                    : "text-green-500"
+                    ? "text-transparent"
+                    : "text-darkGreen"
                 }`}
               >
                 {typeof item.change === 'number' ? (item.change > 0 ? `+${item.change}` : item.change) : item.change}
