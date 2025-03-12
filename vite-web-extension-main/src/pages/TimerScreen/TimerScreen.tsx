@@ -224,11 +224,13 @@ const TimerScreen: React.FC = () => {
       const rewardState = {
         outcome: result.session_outcomes,
         session: { completed: true, action: currentTimerState?.selectedAction },
-        viewed: false
+        viewed: false,
+        updatedEcosystem: result.updated_ecosystem
       };
       
       console.log(rewardState);
-      await chrome.storage.local.set({ rewardState });
+      // Almacenar el estado de recompensa antes de navegar
+      await chrome.storage.local.set({ rewardState, ecosystem: result.updated_ecosystem });
       
       // Update app state
       await chrome.runtime.sendMessage({ 
