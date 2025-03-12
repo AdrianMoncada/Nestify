@@ -5,6 +5,7 @@ import HatchRewardAnimation from "../../assets/animations/hatch-reward-animation
 import { Button } from "../../components/button/Button";
 import { Tooltip } from "../../components/Tooltip/tooltip-component";
 import { backendService } from "../../services/backend-service";
+import RewardMessage from "./RewardMessage";
 
 interface Ecosystem {
   id: string; // uuid
@@ -247,11 +248,14 @@ export default function RewardScreen() {
       
       {/* Animation Container */}
       <div className="flex-1 flex flex-col items-center justify-center">
-      <div className="relative" style={{ width: "250px", height: "250px" }}>
+      <div className="relative" style={{ width: "200px", height: "200px" }}>
       <HatchRewardAnimation actionType={rewardData.session.action || "gather"} />
 </div>
       </div>
-
+      <RewardMessage 
+      outcome={rewardData.outcome} 
+      session={rewardData.session} 
+      />
       <div className="p-4 flex flex-col items-center w-full">
         <div className="grid grid-cols-2 gap-x-1 gap-y-3 w-full max-w-xs mb-6">
           {[
