@@ -119,6 +119,7 @@ export class BackendService {
       
       // Store the complete species data for future use
       chrome.storage.local.set({ species: speciesData });
+      chrome.storage.local.set({ userSpecieCollection: userSpecieData });
       
       return speciesData as Species[];
     } catch (error) {
@@ -174,9 +175,9 @@ export class BackendService {
       }
       
       // Save the session ID in chrome.storage.local
-chrome.storage.local.set({ sessionId: result.session.id }, () => {
-  console.log('Session ID saved:', result.session.id);
-});
+      chrome.storage.local.set({ sessionId: result.session.id }, () => {
+        console.log('Session ID saved:', result.session.id);
+      });
       
     } catch (error) {
       console.error('Error creating session:', error);
@@ -221,10 +222,10 @@ chrome.storage.local.set({ sessionId: result.session.id }, () => {
   }
 
   /**
- * Updates the status of an active session
- * @param sessionId - ID of the session to update
- * @param status - New status of the session ('cancelled' or 'completed')
- */
+   * Updates the status of an active session
+   * @param sessionId - ID of the session to update
+   * @param status - New status of the session ('cancelled' or 'completed')
+   */
   async updateSessionStatus(
     sessionId: string, 
     status: 'cancelled' | 'completed'
@@ -263,6 +264,48 @@ chrome.storage.local.set({ sessionId: result.session.id }, () => {
       
       // Remove session ID from storage if the session is cancelled or completed
       await chrome.storage.local.remove('sessionId');
+      
+      // If session is completed and a new species was unlocked, update the user's species collection
+      if (status === 'completed' && 
+          result.session_outcomes && 
+          result.session_outcomes.species_unlocked) {
+        console.log('New species unlocked:', result.session_outcomes.species_unlocked);
+        
+        try {
+          // Get current user ID
+          const userId = await this.getCurrentUserId();
+          
+          // Fetch updated user species collection
+          const { data: userSpecieData, error: userSpecieError } = await supabase
+            .from('user_specie_collection')
+            .select('*')
+            .eq('user_id', userId);
+          
+          if (userSpecieError) throw userSpecieError;
+          
+          // Update the local storage with the new collection
+          await chrome.storage.local.set({ userSpecieCollection: userSpecieData });
+          console.log('Updated user species collection in storage');
+          
+          // Get all species IDs from updated collection
+          const specieIds = userSpecieData.map(item => item.specie_id);
+          
+          // Fetch complete species details for the updated collection
+          const { data: speciesData, error: speciesError } = await supabase
+            .from('species')
+            .select('*')
+            .in('id', specieIds);
+          
+          if (speciesError) throw speciesError;
+          
+          // Update the species data in local storage
+          await chrome.storage.local.set({ species: speciesData });
+          console.log('Updated species data in storage');
+        } catch (error) {
+          console.error('Error updating species collection after unlock:', error);
+          // We don't want to fail the entire operation if just the species update fails
+        }
+      }
       
       // Return session outcomes and updated ecosystem if available
       return {
