@@ -30,10 +30,10 @@ interface CountState {
   feather: number;
   house: number;
   bird: number;
+  maxBird: number;
 }
 
 export default function RewardScreen() {
-  console.log("ingresa a rewardscreen!")
   const navigate = useNavigate();
   const location = useLocation();
   const [rewardData, setRewardData] = useState<LocationState | null>(null);
@@ -45,12 +45,13 @@ export default function RewardScreen() {
     feather: 0,
     house: 0,
     bird: 0,
+    maxBird: 0
   });
 
   useEffect(() => {
     const loadRewardData = async () => {
       try {
-        console.log("Starting loadRewardData");
+        
 
         // First, check navigation state
         if (location.state?.outcome && location.state?.session) {
@@ -145,7 +146,11 @@ export default function RewardScreen() {
       },
       bird: {
         value: `${ecosystem.population + outcome.population_increase}/${ecosystem.max_population + outcome.max_population_increase}`,
-        change: outcome.population_increase > 0 ? `+${outcome.population_increase}` : "+0",
+        change: outcome.population_increase > 0 
+          ? `+${outcome.population_increase}` 
+          : outcome.max_population_increase > 0 
+            ? `+${outcome.max_population_increase}` 
+            : "+0",
       },
     };
   };
@@ -182,7 +187,11 @@ export default function RewardScreen() {
         ),
         bird: Math.min(
           Math.ceil((ecosystem.population + rewardData.outcome.population_increase) / steps * step),
-          ecosystem.population + rewardData.outcome.population_increase
+          ecosystem.population
+        ),
+        maxBird: Math.min(
+          Math.ceil(ecosystem.max_population / steps * step), // Usa el valor correcto de max_population
+          ecosystem.max_population
         ),
       }));
     };
@@ -279,7 +288,7 @@ export default function RewardScreen() {
             },
             {
               icon: <Bird size={20} />,
-              value: `${counts.bird}/${ecosystem.max_population + rewardData.outcome.max_population_increase}`,
+              value: `${counts.bird}/${counts.maxBird}`,
               change: changes.bird?.change,
               type: "bird" as keyof typeof descriptions,
             },

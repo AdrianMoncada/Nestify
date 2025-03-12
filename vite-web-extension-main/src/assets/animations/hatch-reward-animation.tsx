@@ -9,7 +9,6 @@ interface RewardAnimationProps {
 }
 
 const HatchRewardAnimation: React.FC<RewardAnimationProps> = ({ actionType }) => {
-  console.log(actionType);
   // Determinar qué imagen mostrar según la acción
   const getRewardImage = () => {
     if (!actionType) return DefaultRewardImage; // O cualquier imagen por defecto que desees
