@@ -10,6 +10,7 @@ import { AnimatedBird } from '../../assets/animations/animated-bird';
 import { useNavigate, useLocation } from "react-router-dom";
 import { FloatingHeader } from "../../components/FloatingHeader/floating-header";
 import { backendService } from "../../services/backend-service";
+import ProcessingRewardsModal from "../../components/ProcessingRewardsModal/ProcessingRewardsModal"; // Import the modal
 
 
 interface Ecosystem {
@@ -46,6 +47,7 @@ const TimerScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { setCloudsMoving } = useCloudAnimation();
+  const [processingRewards, setProcessingRewards] = useState(false); // Add state for processing rewards modal
 
   // Default values to prevent undefined errors
   const DEFAULT_ACTION = "Focus";
@@ -138,23 +140,28 @@ const TimerScreen: React.FC = () => {
       await chrome.storage.local.remove(['timerState']);
       setIsRunning(false);
   
+      // Show processing rewards modal
+      setProcessingRewards(true);
   
-     // Get the session ID from storage
-     const { sessionId } = await chrome.storage.local.get('sessionId');
+      // Get the session ID from storage
+      const { sessionId } = await chrome.storage.local.get('sessionId');
       
-     if (!sessionId) {
-      throw new Error('No active session found');
-    }
+      if (!sessionId) {
+        throw new Error('No active session found');
+      }
 
-    // Update session status, which triggers outcomes processing
-    const result = await backendService.updateSessionStatus(sessionId, 'completed');
+      // Update session status, which triggers outcomes processing
+      const result = await backendService.updateSessionStatus(sessionId, 'completed');
   
-    const rewardState = {
-      outcome: result.session_outcomes,
-      session: { completed: true, action: currentTimerState?.selectedAction },
-      viewed: false,
-      updatedEcosystem: result.updated_ecosystem
-    };
+      // Hide processing rewards modal
+      setProcessingRewards(false);
+
+      const rewardState = {
+        outcome: result.session_outcomes,
+        session: { completed: true, action: currentTimerState?.selectedAction },
+        viewed: false,
+        updatedEcosystem: result.updated_ecosystem
+      };
   
       // Almacenar el estado de recompensa antes de navegar
       await chrome.storage.local.set({ rewardState, ecosystem: result.updated_ecosystem });
@@ -182,6 +189,8 @@ const TimerScreen: React.FC = () => {
         }
       });
     } catch (error) {
+      // Hide processing rewards modal on error
+      setProcessingRewards(false);
       console.error('Error handling expired timer:', error);
       setError('Failed to process completed session');
       navigate('/');
@@ -210,6 +219,9 @@ const TimerScreen: React.FC = () => {
       await chrome.storage.local.remove(['timerState']);
       setIsRunning(false);
   
+      // Show processing rewards modal
+      setProcessingRewards(true);
+  
       // Get the session ID from storage
       const { sessionId } = await chrome.storage.local.get('sessionId');
       
@@ -220,6 +232,9 @@ const TimerScreen: React.FC = () => {
       // Update session status, which triggers outcomes processing
       const result = await backendService.updateSessionStatus(sessionId, 'completed');
   
+      // Hide processing rewards modal
+      setProcessingRewards(false);
+
       // Save reward state before navigation
       const rewardState = {
         outcome: result.session_outcomes,
@@ -254,6 +269,8 @@ const TimerScreen: React.FC = () => {
         }
       });
     } catch (error) {
+      // Hide processing rewards modal on error
+      setProcessingRewards(false);
       console.error('Error completing session:', error);
       setError('Failed to process completed session');
       navigate('/');
@@ -464,6 +481,9 @@ const TimerScreen: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Add the ProcessingRewardsModal component */}
+      <ProcessingRewardsModal isVisible={processingRewards} />
     </div>
   );
 };
