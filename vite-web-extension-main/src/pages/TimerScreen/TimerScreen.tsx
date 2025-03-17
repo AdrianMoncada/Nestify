@@ -96,7 +96,7 @@ const TimerScreen: React.FC = () => {
           const newTimerState: TimerStorage = {
             startTime: new Date().getTime(),
             // Update to test flow timer app
-            totalDuration: session.selectedTime * 60,
+            totalDuration: session.selectedTime * 1,
             selectedBird: session.selectedBird || DEFAULT_BIRD,
             selectedAction: session.selectedAction || DEFAULT_ACTION,
             selectedTime: session.selectedTime,
@@ -177,13 +177,12 @@ const TimerScreen: React.FC = () => {
         }
       });
   
-      // Navigate to reward screen with the necessary data
       navigate('/reward', { 
         state: { 
           outcome: result.session_outcomes,
           session: { 
             completed: true, 
-            action: currentTimerState?.selectedAction?.toLowerCase() || "gather" 
+            action: savedTimer.selectedAction.toLowerCase() || "gather" 
           },
           updatedEcosystem: result.updated_ecosystem
         }
