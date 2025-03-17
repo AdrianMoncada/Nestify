@@ -13,6 +13,9 @@ import { FloatingHeader } from "../../components/FloatingHeader/floating-header"
 import { ErrorAlert} from "../../components/ErrorAlert/ErrorAlert";
 import { backendService } from "../../services/backend-service";
 import { HamburgerMenu } from "@src/components/HamburgerMenu/HamburgerMenu";
+import { SessionTypeButton } from '../../components/FlagSelector/SessionTypeButton'
+import { SessionTypeModal } from '../../components/FlagSelector/SessionTypeModal'
+import { SessionType } from '../../components/FlagSelector/types'
 
 interface Ecosystem {
   id: string; // uuid
@@ -71,6 +74,8 @@ export default function SelectionScreen() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const errorTimeoutRef = useRef<number | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedType, setSelectedType] = useState<SessionType | undefined>()
   
   // New states for mock database integration
   const [ecosystem, setEcosystem] = useState<Ecosystem | null>(null);
@@ -282,7 +287,8 @@ export default function SelectionScreen() {
         duration: timer * 60, // Convert to seconds
         completed: false,
         start_time: new Date(),
-        cancelled: false
+        cancelled: false,
+        bird_name: currentBird.name
       };
       
       // This will throw an error if validation fails
@@ -375,12 +381,9 @@ export default function SelectionScreen() {
     <div className="relative">
       <HamburgerMenu
           enabledOptions={{
-            profile: false,
-            // deshabilitado
-            settings: false,
-            // deshabilitado
             logout: true, // habilitado
-            mellowtel: true
+            mellowtel: true,
+            sessions: true
           }}
         />
       {/* Floating error message */}
@@ -455,7 +458,6 @@ export default function SelectionScreen() {
           <TimerDisplay timer={timer} />
           <TimerButton type="plus" onClick={() => handleTimerAdjust(5)} />
         </div>
-
         <div className="flex justify-center">
           <div className="w-4/5">
             <Button 

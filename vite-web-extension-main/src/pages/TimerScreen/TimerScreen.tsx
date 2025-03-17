@@ -96,7 +96,7 @@ const TimerScreen: React.FC = () => {
           const newTimerState: TimerStorage = {
             startTime: new Date().getTime(),
             // Update to test flow timer app
-            totalDuration: session.selectedTime * 1,
+            totalDuration: session.selectedTime * 60,
             selectedBird: session.selectedBird || DEFAULT_BIRD,
             selectedAction: session.selectedAction || DEFAULT_ACTION,
             selectedTime: session.selectedTime,
@@ -421,7 +421,7 @@ const TimerScreen: React.FC = () => {
         <Tooltip position="bottom" content="Minutes for focus session">
           <div className="flex items-center gap-2 text-[#784E2F] cursor-help">
             <Clock size={20} />
-            <span>{Math.ceil(timeLeft / 60)}</span>
+            <span>{displayState?.selectedTime}</span>
           </div>
         </Tooltip>
       </div>

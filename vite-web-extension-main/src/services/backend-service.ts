@@ -15,6 +15,7 @@ export interface SessionData {
   completed: boolean;
   start_time: Date;
   cancelled: boolean;
+  bird_name: string;
 }
 
 // Class that encapsulates all database interactions
@@ -153,7 +154,8 @@ export class BackendService {
         action: sessionData.action.toLowerCase(), // Ensure lowercase to match Edge Function expectations
         duration: sessionData.duration,
         completed: sessionData.completed || false,
-        cancelled: sessionData.cancelled || false
+        cancelled: sessionData.cancelled || false,
+        bird_name: sessionData.bird_name
       };
       
       // Make the request to the Edge Function

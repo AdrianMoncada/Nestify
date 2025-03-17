@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Menu, User, Settings, LogOut, ExternalLink } from "lucide-react";
+import { Menu, User, Settings, LogOut, ExternalLink, Clock } from "lucide-react";
 import { supabase } from '../../lib/supabase'; // Adjust import path as needed
 import { useNavigate } from 'react-router-dom';
 
@@ -9,6 +9,7 @@ interface MenuButtonProps {
     settings?: boolean;
     logout?: boolean;
     mellowtel?: boolean;
+    sessions?: boolean;
   };
 }
 
@@ -17,7 +18,8 @@ export const HamburgerMenu = ({
     profile: false,
     settings: false,
     logout: true,
-    mellowtel: true, // Habilitado por defecto
+    mellowtel: true,
+    sessions: true, // Habilitado por defecto
   },
 }: MenuButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -81,6 +83,25 @@ export const HamburgerMenu = ({
     }
   };
 
+  const openSessionsDashboard = async () => {
+    try {
+      // Retrieve userId from chrome.storage.local
+      chrome.storage.local.get("userId", ({ userId }) => {
+        if (userId) {
+          // Redirect to the new URL with userId
+          window.open(`https://nestify-eta.vercel.app/dashboard/sessions/${userId}`, '_blank');
+          console.log("Navigating to sessions dashboard with userId:", userId);
+        } else {
+          console.error('userId not found in local storage');
+        }
+      });
+    } catch (error) {
+      console.error('Error retrieving userId:', error);
+    }
+  
+    setIsOpen(false); // Close the menu after clicking
+  };
+
   return (
     <div ref={menuRef} className="absolute top-0 right-3 z-50">
       <button
@@ -107,26 +128,18 @@ export const HamburgerMenu = ({
                       z-50"
         >
           <div className="flex flex-col">
-            <button
-              disabled={!enabledOptions.profile}
-              className={`flex items-center gap-2 px-3 py-2.5
-                             text-sm text-[#784E2F]
-                             transition-colors duration-200
-                             ${enabledOptions.profile ? "hover:bg-[#957F66]/20" : "opacity-50 cursor-not-allowed"}`}
-            >
-              <User size={16} />
-              <span>Profile</span>
-            </button>
-            <button
-              disabled={!enabledOptions.settings}
-              className={`flex items-center gap-2 px-3 py-2.5
-                             text-sm text-[#784E2F]
-                             transition-colors duration-200
-                             ${enabledOptions.settings ? "hover:bg-[#957F66]/20" : "opacity-50 cursor-not-allowed"}`}
-            >
-              <Settings size={16} />
-              <span>Settings</span>
-            </button>
+            {enabledOptions.sessions && (
+              <button
+                onClick={openSessionsDashboard}
+                className="flex items-center gap-2 px-3 py-2.5
+                           text-sm text-[#784E2F]
+                           transition-colors duration-200
+                           hover:bg-[#957F66]/20"
+              >
+                <Clock size={16} />
+                <span>My Sessions</span>
+              </button>
+            )}
             {enabledOptions.mellowtel && (
               <button
                 onClick={openMellowtelSettings}
@@ -156,4 +169,3 @@ export const HamburgerMenu = ({
     </div>
   );
 };
-
