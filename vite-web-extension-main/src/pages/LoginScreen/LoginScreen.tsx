@@ -5,12 +5,14 @@ import CloudBackground from "../../assets/animations/CloudBackground";
 import { Button } from "../../components/button/Button";
 import loginImage from "../../assets/img/Robin.png";
 import { supabase, getUserData } from "../../lib/supabase";
+import { JumpingBird } from "@src/assets/animations/JumpingBird";
+import { CheckCircle } from 'lucide-react';
 
 export default function LoginScreen() {
   const navigate = useNavigate();
 
   const handleGoogleLogin = async () => {
-    console.log('Ingreso a handleGoogleLogin...');
+    console.log('Attempting Google login...');
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -18,9 +20,9 @@ export default function LoginScreen() {
           redirectTo: chrome.identity.getRedirectURL(),
         },
       });
-      
+
       if (error) throw error;
-      
+
       if (data.url) {
         await chrome.tabs.create({ url: data.url });
       }
@@ -30,27 +32,36 @@ export default function LoginScreen() {
   };
 
   return (
-    <div className="relative z-10 w-full h-full p-6 flex flex-col items-center">
-      <div className="w-56 h-56 mb-4 flex items-center justify-center">
-        <img src={loginImage} alt="loginImage" className="w-full h-full object-cover rounded-[24px]"/>
+    <div className="relative w-full h-full flex flex-col items-center justify-center p-6">
+      {/* Welcome Message */}
+      <h1 className="text-4xl font-bold text-brown mb-2 tracking-wider">Nestify</h1>
+
+      {/* Bird Animation */}
+      <div className="w-64 h-64 flex items-center justify-center mb-2">
+        <JumpingBird />
       </div>
-      <h2 className="text-lg font-medium text-brown mb-1">
+
+      {/* Main Title */}
+      <h2 className="text-2xl font-semibold text-brown mb-2 text-center">
         Build and Grow with Nestify
       </h2>
-      <p className="text-sm text-brown/90 text-center mb-6 font-normal">
-        Your productivity takes shape here. Save your progress and build
-        your habitat with Nestify
-      </p>
-      <div className="w-full mb-3">
-        <div className="relative">
-          <Button 
-            variant="primary"
-            onClick={handleGoogleLogin}
-          >
-            Continue with Google
-          </Button>
-        </div>
-      </div>
+      <ul className="text-base font-semibold text-brown/80 text-center space-y-2 mb-2">
+  <li className="inline-flex items-center space-x-2">
+    <CheckCircle color="#FDD176" />
+    <span>Stay productive with focus timers</span>
+  </li>
+  <li className="inline-flex items-center space-x-2">
+    <CheckCircle color="#FDD176" />
+    <span>Grow your virtual ecosystem</span>
+  </li>
+</ul>
+
+
+      {/* Login Button */}
+      <Button variant="primary" onClick={handleGoogleLogin}>
+        Continue with Google
+      </Button>
     </div>
   );
 }
+
