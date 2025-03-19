@@ -17,6 +17,7 @@
   },
   "type": "module",
   "dependencies": {
+    "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.48.1",
     "lucide-react": "^0.472.0",
     "mellowtel": "^1.5.6",

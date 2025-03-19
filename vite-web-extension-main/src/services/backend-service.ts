@@ -1,10 +1,12 @@
 import { Species, Ecosystem } from "../mockDatabase/mock-database";
-import { createClient } from '@supabase/supabase-js';
+// import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
+// Elimina la línea que crea un nuevo cliente
 
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+// const supabase = createClient(
+//   import.meta.env.VITE_SUPABASE_URL,
+//   import.meta.env.VITE_SUPABASE_ANON_KEY
+// );
 
 // Type definitions
 export interface SessionData {

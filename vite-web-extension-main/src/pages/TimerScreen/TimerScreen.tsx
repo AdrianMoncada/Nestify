@@ -96,7 +96,7 @@ const TimerScreen: React.FC = () => {
           const newTimerState: TimerStorage = {
             startTime: new Date().getTime(),
             // Update to test flow timer app
-            totalDuration: session.selectedTime * 1,
+            totalDuration: session.selectedTime * 60,
             selectedBird: session.selectedBird || DEFAULT_BIRD,
             selectedAction: session.selectedAction || DEFAULT_ACTION,
             selectedTime: session.selectedTime,
@@ -158,7 +158,7 @@ const TimerScreen: React.FC = () => {
 
       const rewardState = {
         outcome: result.session_outcomes,
-        session: { completed: true, action: currentTimerState?.selectedAction },
+        session: { completed: true, action: savedTimer.selectedAction.toLowerCase() },
         viewed: false,
         updatedEcosystem: result.updated_ecosystem
       };
