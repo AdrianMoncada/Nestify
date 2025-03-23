@@ -1,6 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Nestify",
+  "version": "1.0",
   "description": "Grow your virtual bird ecosystem while completing focus sessions to gamify your productivity habits",
   "options_ui": {
     "page": "src/pages/options/index.html"
@@ -17,8 +18,8 @@
   "permissions": [
     "activeTab",
     "storage",
-    "identity",
     "tabs",
+    "identity",
     "declarativeNetRequest"
   ],
   "host_permissions": [
