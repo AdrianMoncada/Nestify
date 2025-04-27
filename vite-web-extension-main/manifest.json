@@ -15,13 +15,6 @@
   "icons": {
     "128": "icon-128.png"
   },
-  "permissions": [
-    "activeTab",
-    "storage",
-    "tabs",
-    "identity",
-    "declarativeNetRequest"
-  ],
   "host_permissions": [
     "\u003Call_urls\u003E"
   ],
